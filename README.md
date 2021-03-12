@@ -1,0 +1,1 @@
+Discord bot that notifies users of people looking to play a game
