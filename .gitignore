@@ -1,5 +1,7 @@
 #dot env
 .env
+#database
+database.sqlite
 
 #directories
 node_modules/

@@ -1,6 +1,7 @@
 {
     "env": {
-        "browser": true,
+        "browser": false,
+        "node": true,
         "es2021": true
     },
     "extends": [
@@ -11,5 +12,6 @@
         "sourceType": "module"
     },
     "rules": {
+        "max-len": ["error", 120]
     }
 }
