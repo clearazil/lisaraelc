@@ -1,4 +1,5 @@
 import Sequelize from 'sequelize';
+import config from '../../config/config';
 
 /**
  *
@@ -8,7 +9,9 @@ class Database {
      *
      * @param {object} dbConfig
      */
-  constructor(dbConfig) {
+  constructor() {
+    const dbConfig = config.database;
+
     this._connection = new Sequelize(dbConfig.name, dbConfig.username, dbConfig.password, {
       host: dbConfig.host,
       dialect: dbConfig.dialect,
@@ -49,22 +52,6 @@ class Database {
 
   /**
    * @param {Sequelize} sequelize
-   * @param {object} parameters
-   * @param {object} where
-   * @return {Promise}
-   */
-  async createIfNotExists(sequelize, parameters, where) {
-    return this.find(sequelize, where).then((response) => {
-      if (response === null) {
-        response = this.create(sequelize, parameters);
-      }
-
-      return response;
-    });
-  }
-
-  /**
-   * @param {Sequelize} sequelize
    * @param {object} where
    * @return {Promise}
    */
@@ -79,4 +66,4 @@ class Database {
   }
 }
 
-export default Database;
+export default (new Database);
