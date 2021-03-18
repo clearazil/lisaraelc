@@ -6,11 +6,13 @@ dotenv.config();
 export default {
   'node_env': process.env.NODE_ENV,
   'database': {
+    'host': 'localhost',
     'username': process.env.DB_USERNAME,
     'password': process.env.DB_PASSWORD,
     'name': process.env.DB_DATABASE,
     'storage': 'database.sqlite',
     'dialect': process.env.DB_CONNECTION,
+    'logging': false,
   },
   'discord': {
     'token': process.env.DISCORD_TOKEN,
