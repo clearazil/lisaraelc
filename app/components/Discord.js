@@ -1,8 +1,9 @@
-import Role from './Role';
 
 import config from '../../config/config.js';
 import DiscordJs from 'discord.js';
 import '../core/Database';
+import LFG from '../commands/LFG';
+import RoleOptionsMessage from './RoleOptionsMessage';
 
 /**
  *
@@ -14,9 +15,14 @@ class Discord {
   constructor() {
     this._client = new DiscordJs.Client();
     this._client.login(config.token);
+    this._guild = null;
 
     this._client.once('ready', () => {
-      this._role = new Role;
+      RoleOptionsMessage.send();
+
+      const lfgCommand = new LFG;
+
+      this.addCommand(lfgCommand);
     });
   }
 
@@ -35,11 +41,33 @@ class Discord {
   }
 
   /**
+   * @return {Guild}
+   */
+  async fetchGuild() {
+    if (this._guild === null) {
+      this._guild = await this.client.guilds.fetch(this.config.serverId);
+    }
+
+    return this._guild;
+  }
+
+  /**
    * @param {string} name
    * @return {Channel}
    */
   fetchChannel(name) {
     return this.client.channels.cache.get(name);
+  }
+
+  /**
+   * @param {Object} command
+   */
+  addCommand(command) {
+    this.client.on('message', (message) => {
+      if (message.content.startsWith(command.name)) {
+        command.action(message);
+      }
+    });
   }
 
   /**
