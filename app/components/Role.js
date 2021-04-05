@@ -46,10 +46,6 @@ class Role {
     return null;
   }
 
-  addUsers() {
-
-  }
-
   /**
    *
    * @return {string}

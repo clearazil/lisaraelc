@@ -20,7 +20,6 @@ class RoleOptionsMessage {
    */
   async get() {
     if (this._message === null) {
-      console.log('true');
       const dbMessage = await this.find();
 
       this._message = await Discord.rolesChannel.messages.fetch(dbMessage.messageId);

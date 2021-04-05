@@ -26,11 +26,25 @@ class LFG {
    * @param {Message} message
    */
   async action(message) {
-    message.channel.send(`${message.author} You you have sent the ${this.name} command!`);
+    let messageReply = message.content.replace(this.name, '').trim();
 
-    const role = await Role.get('Valheim');
+    let foundValidRoles = false;
+    let role;
+    let regExp;
 
-    if (role !== null) {
+    const roleConfig = Discord.config.gameRoles;
+    for (let i = 0; i < roleConfig.length; i++) {
+      regExp = new RegExp(roleConfig[i].name, 'i');
+
+      if (messageReply.search(regExp) !== -1) {
+        foundValidRoles = true;
+        role = await Role.get(roleConfig[i].name);
+
+        messageReply = messageReply.replace(regExp, role.mention());
+      }
+    }
+
+    if (foundValidRoles) {
       const reactedMembers = await this.optionsMessage.reactionUsers(role.emoji);
 
       const guild = await Discord.fetchGuild();
@@ -45,7 +59,9 @@ class LFG {
         }
       }
 
-      message.channel.send(`${role.mention()}`);
+      Discord.fetchChannel(Discord.config.channels.gamingLfg).send(`${message.author} : ${messageReply}`);
+    } else {
+      message.channel.send(`${message.author} Sorry, I couldn't find any valid games in your message.`);
     }
   }
 
