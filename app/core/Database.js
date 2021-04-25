@@ -64,6 +64,20 @@ class Database {
 
     return result;
   }
+
+  /**
+   * @param {Sequelize} sequelize
+   * @return {Promise}
+   */
+  async findAll(sequelize) {
+    const result = await this.connection().transaction(async (t) => {
+      const models = await sequelize.findAll({transaction: t});
+
+      return models;
+    });
+
+    return result;
+  }
 }
 
 export default (new Database);

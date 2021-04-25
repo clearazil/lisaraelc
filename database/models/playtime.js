@@ -1,14 +1,12 @@
 'use strict';
-
 const {
   Model,
 } = require('sequelize');
-
 module.exports = (sequelize, DataTypes) => {
   /**
    *
    */
-  class User extends Model {
+  class PlayTime extends Model {
     /**
      * Helper method for defining associations.
      * This method is not a part of Sequelize lifecycle.
@@ -16,16 +14,18 @@ module.exports = (sequelize, DataTypes) => {
      * @param {unknown} models
      */
     static associate(models) {
-      User.belongsToMany(models.PlayTime, {through: 'PlayTimeUsers'});
+      PlayTime.belongsToMany(models.User, {through: 'PlayTimeUser'});
     }
   };
-  User.init({
-    discordUserId: DataTypes.STRING,
+  PlayTime.init({
     name: DataTypes.STRING,
+    emoji: DataTypes.STRING,
+    timeStart: DataTypes.TIME,
+    timeEnd: DataTypes.TIME,
   }, {
     sequelize,
-    modelName: 'User',
+    modelName: 'PlayTime',
   });
 
-  return User;
+  return PlayTime;
 };

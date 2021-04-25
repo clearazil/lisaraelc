@@ -4,6 +4,7 @@ import DiscordJs from 'discord.js';
 import '../core/Database';
 import LFG from '../commands/LFG';
 import RoleOptionsMessage from './RoleOptionsMessage';
+import PlayTimesMessage from './PlayTimesMessage';
 
 /**
  *
@@ -19,6 +20,7 @@ class Discord {
 
     this._client.once('ready', () => {
       RoleOptionsMessage.send();
+      PlayTimesMessage.send();
 
       const lfgCommand = new LFG;
 

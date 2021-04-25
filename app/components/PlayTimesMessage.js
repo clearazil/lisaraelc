@@ -1,0 +1,122 @@
+
+import Discord from './Discord';
+import Database from '../core/Database';
+const db = require('../../database/models');
+
+/**
+ *
+ */
+class PlayTimesMessage {
+  /**
+   *
+   */
+  constructor() {
+    this._message = null;
+  }
+
+  /**
+   *
+   * @return {Message}
+   */
+  async get() {
+    if (this._message === null) {
+      const dbMessage = await this.find();
+
+      this._message = await Discord.rolesChannel.messages.fetch(dbMessage.messageId);
+    }
+
+    return this._message;
+  }
+
+  /**
+   *
+   * @param {string} emoji
+   * @return {Promise}
+   */
+  async reactionUsers(emoji) {
+    const message = await this.get();
+    const reactions = message.reactions.cache;
+    const users = await reactions.get(emoji).users.fetch();
+
+    return users;
+  }
+
+  /**
+   * @return {string}
+   */
+  get name() {
+    return 'playTimesMessage';
+  }
+
+  /**
+   * Submit the time periods message to the
+   * roles channel if it has not been sent yet
+   */
+  async send() {
+    if (!await this.exists()) {
+      const rolesChannel = Discord.rolesChannel;
+
+      let message = 'React with the emoji\'s below to set the time periods you want to be notified.\n\n';
+
+      const playTimes = await Database.findAll(db.PlayTime);
+
+      playTimes.forEach((playTime) => {
+        message += `${playTime.emoji} ${this.ucfirst(playTime.name)} ${playTime.timeStart} - ${playTime.timeEnd}\n`;
+      });
+
+      const discordMessage = await rolesChannel.send(message);
+
+      playTimes.forEach((playTime) => {
+        discordMessage.react(playTime.emoji);
+      });
+
+      this.saveId(discordMessage);
+    }
+  }
+
+  /**
+   * Capitalize the first character
+   * in a string
+   * TODO: move to a helper class
+   * @param {string} string
+   * @return {string}
+   */
+  ucfirst(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
+  }
+
+  /**
+   * @return {Promise}
+   */
+  async find() {
+    return Database.find(db.BotMessages, {
+      where: {
+        name: this.name,
+      },
+    });
+  }
+
+  /**
+   *
+   * @return {Promise}
+   */
+  async exists() {
+    return await this.find();
+  }
+
+  /**
+   * Save the id of the role selection
+   * message, so next time the bot restarts
+   * we can check if the message has already
+   * been sent or not
+   * @param {Message} message
+   */
+  saveId(message) {
+    Database.create(db.BotMessages, {
+      messageId: message.id,
+      name: this.name,
+    });
+  }
+}
+
+export default new PlayTimesMessage;
