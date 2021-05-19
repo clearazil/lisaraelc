@@ -16,11 +16,13 @@ class Discord {
   constructor() {
     this._client = new DiscordJs.Client();
     this._client.login(config.token);
+
     this._guild = null;
 
     this._client.once('ready', () => {
       RoleOptionsMessage.send();
       PlayTimesMessage.send();
+      PlayTimesMessage.awaitReactions();
 
       const lfgCommand = new LFG;
 
