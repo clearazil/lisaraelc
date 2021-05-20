@@ -53,8 +53,10 @@ class LFG {
 
       const allMembers = await guild.members.fetch();
 
+      // eslint-disable-next-line no-unused-vars
       for (const [key, member] of allMembers) {
-        if (reactedMembers.get(member.id) && await this.notifyAtThisTime(member.id)) {
+        console.log(member);
+        if (!member.bot && reactedMembers.get(member.id) && await this.notifyAtThisTime(member.id)) {
           await member.roles.add(role.id);
         } else {
           await member.roles.remove(role.id);
@@ -80,13 +82,9 @@ class LFG {
       },
     });
 
-    let notify = true;
+    let notify = false;
 
     if (userModel !== null) {
-      if (userModel.PlayTimes.length === 0) {
-        return true;
-      }
-
       const options = {
         timeZone: 'Europe/Amsterdam',
         year: 'numeric',
