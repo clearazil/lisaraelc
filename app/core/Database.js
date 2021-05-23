@@ -67,11 +67,12 @@ class Database {
 
   /**
    * @param {Sequelize} sequelize
+   * @param {object} options
    * @return {Promise}
    */
-  async findAll(sequelize) {
+  async findAll(sequelize, options = {}) {
     const result = await this.connection().transaction(async (t) => {
-      const models = await sequelize.findAll({transaction: t});
+      const models = await sequelize.findAll(options, {transaction: t});
 
       return models;
     });

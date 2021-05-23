@@ -1,6 +1,5 @@
 
 import Discord from '../components/Discord';
-import Role from '../components/Role';
 import Database from '../core/Database';
 import RoleOptionsMessage from '../components/RoleOptionsMessage';
 const db = require('../../database/models');
@@ -14,6 +13,8 @@ class LFG {
    */
   constructor() {
     this._optionsMessage = RoleOptionsMessage;
+    this._foundRole = false;
+    this._foundRolesInMessage = false;
   }
 
 
@@ -25,44 +26,96 @@ class LFG {
   }
 
   /**
-   * @param {Message} message
+   * @param {string} message
+   * @param {object} game
+   * @return {string}
    */
-  async action(message) {
-    let messageReply = message.content.replace(this.name, '').trim();
+  setRoleMentions(message, game) {
+    let regExp = new RegExp(game.name, 'i');
 
-    let foundValidRoles = false;
-    let role;
-    let regExp;
+    if (message.search(regExp) !== -1) {
+      this._foundRole = true;
+      message = message.replace(regExp, game.mention());
 
-    const roleConfig = Discord.config.gameRoles;
-    for (let i = 0; i < roleConfig.length; i++) {
-      regExp = new RegExp(roleConfig[i].name, 'i');
+      return message;
+    }
 
-      if (messageReply.search(regExp) !== -1) {
-        foundValidRoles = true;
-        role = await Role.get(roleConfig[i].name);
+    if (game.GameAliases.length > 0) {
+      for (const alias of game.GameAliases) {
+        regExp = new RegExp(alias.name, 'i');
 
-        messageReply = messageReply.replace(regExp, role.mention());
+        if (message.search(regExp) !== -1) {
+          this._foundRole = true;
+          message = message.replace(regExp, game.mention());
+          break;
+        }
       }
     }
 
-    if (foundValidRoles) {
-      const reactedMembers = await this.optionsMessage.reactionUsers(role.emoji);
+    return message;
+  }
 
-      const guild = await Discord.fetchGuild();
+  /**
+   * @param {object} game
+   * @param {object} members
+   */
+  async addOrRemoveRoles(game, members) {
+    let userGameSetting;
+    let member;
+    let count = 0;
 
-      const allMembers = await guild.members.fetch();
+    const users = await Database.findAll(db.User, {
+      include: {all: true},
+    });
 
-      // eslint-disable-next-line no-unused-vars
-      for (const [key, member] of allMembers) {
-        console.log(member);
-        if (!member.bot && reactedMembers.get(member.id) && await this.notifyAtThisTime(member.id)) {
-          await member.roles.add(role.id);
-        } else {
-          await member.roles.remove(role.id);
-        }
+    for (const user of users) {
+      userGameSetting = await Database.find(db.UserGameSetting, {
+        where: {
+          userId: user.id,
+          gameId: game.id,
+        },
+      });
+
+      member = members.get(user.discordUserId);
+
+      count++;
+      if (userGameSetting !== null && userGameSetting.notify && await this.notifyAtThisTime(member.id)) {
+        await member.roles.add(game.discordRoleId);
+      } else {
+        await member.roles.remove(game.discordRoleId);
       }
+    }
 
+    console.log(`added/removed ${count} times`);
+  }
+
+  /**
+   * @param {Message} message
+   */
+  async action(message) {
+    this._foundRolesInMessage = false;
+    let messageReply = message.content.replace(this.name, '').trim();
+
+    const gameRoles = await Database.findAll(db.Game, {
+      include: {all: true},
+    });
+
+    const guild = await Discord.fetchGuild();
+
+    const allMembers = await guild.members.fetch();
+
+    for (const gameRole of gameRoles) {
+      this._foundRole = false;
+
+      messageReply = this.setRoleMentions(messageReply, gameRole);
+
+      if (this._foundRole) {
+        this._foundRolesInMessage = true;
+        this.addOrRemoveRoles(gameRole, allMembers);
+      }
+    }
+
+    if (this._foundRolesInMessage) {
       Discord.fetchChannel(Discord.config.channels.gamingLfg).send(`${message.author.username} : ${messageReply}`);
     } else {
       message.channel.send(`${message.author} Sorry, I couldn't find any valid games in your message.`);

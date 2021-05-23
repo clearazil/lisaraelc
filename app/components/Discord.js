@@ -5,6 +5,10 @@ import '../core/Database';
 import LFG from '../commands/LFG';
 import RoleOptionsMessage from './RoleOptionsMessage';
 import PlayTimesMessage from './PlayTimesMessage';
+import GameMessage from './GameMessage';
+import Game from '../commands/Game.js';
+import Database from '../core/Database';
+const db = require('../../database/models');
 
 /**
  *
@@ -23,10 +27,13 @@ class Discord {
       RoleOptionsMessage.send();
       PlayTimesMessage.send();
       PlayTimesMessage.awaitReactions();
+      GameMessage.awaitReactions();
 
       const lfgCommand = new LFG;
+      const gameCommands = new Game;
 
       this.addCommand(lfgCommand);
+      this.addCommand(gameCommands);
     });
   }
 
@@ -68,8 +75,16 @@ class Discord {
    */
   addCommand(command) {
     this.client.on('message', (message) => {
-      if (message.content.startsWith(command.name)) {
-        command.action(message);
+      if (typeof command.name === 'object') {
+        for (const [key, commandName] of command.name) {
+          if (message.content.startsWith(commandName)) {
+            command[key](message);
+          }
+        }
+      } else {
+        if (message.content.startsWith(command.name)) {
+          command.action(message);
+        }
       }
     });
   }
@@ -79,6 +94,40 @@ class Discord {
    */
   get rolesChannel() {
     return this.fetchChannel(this.config.channels.roles);
+  }
+
+  /**
+   * @return {Channel}
+   */
+  get gamesChannel() {
+    return this.fetchChannel(this.config.channels.games);
+  }
+
+  /**
+   *
+   * @param {User} discordUser
+   * @return {db.User}
+   */
+  async databaseUser(discordUser) {
+    if (discordUser === undefined) {
+      throw new Error('discordUser is undefined');
+    }
+    let userModel = await Database.find(db.User, {
+      where: {
+        discordUserId: discordUser.id,
+      },
+    });
+
+    if (userModel === null) {
+      userModel = await Database.create(db.User, {
+        discordUserId: discordUser.id,
+        name: discordUser.username,
+      });
+    }
+
+    console.log('userModel', userModel, 'userModel');
+
+    return userModel;
   }
 
   /**

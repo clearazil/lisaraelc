@@ -111,32 +111,11 @@ class PlayTimesMessage {
 
   /**
    *
-   * @param {Object} user
-   */
-  async saveUser(user) {
-    let userModel = await Database.find(db.User, {
-      where: {
-        discordUserId: user.id,
-      },
-    });
-
-    if (userModel === null) {
-      userModel = await Database.create(db.User, {
-        discordUserId: user.id,
-        name: user.username,
-      });
-    }
-
-    return userModel;
-  }
-
-  /**
-   *
    * @param {string} emoji
    * @param {Object} user
    */
   async saveUserTime(emoji, user) {
-    const userModel = await this.saveUser(user);
+    const userModel = await Discord.databaseUser(user);
 
     const playTime = await Database.find(db.PlayTime, {
       where: {
@@ -156,7 +135,7 @@ class PlayTimesMessage {
    * @param {Object} user
    */
   async deleteUserTime(emoji, user) {
-    const userModel = await this.saveUser(user);
+    const userModel = await Discord.databaseUser(user);
 
     const playTime = await Database.find(db.PlayTime, {
       where: {

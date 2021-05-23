@@ -1,22 +1,28 @@
 'use strict';
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    await queryInterface.createTable('PlayTimeUsers', {
+    await queryInterface.createTable('UserGameSettings', {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: Sequelize.INTEGER,
       },
-      PlayTimeId: {
-        type: Sequelize.INTEGER,
-        onDelete: 'CASCADE',
-        references: {model: 'PlayTimes', key: 'id'},
-      },
-      UserId: {
+      userId: {
+        allowNull: false,
         type: Sequelize.INTEGER,
         onDelete: 'CASCADE',
         references: {model: 'Users', key: 'id'},
+      },
+      gameId: {
+        allowNull: false,
+        type: Sequelize.INTEGER,
+        onDelete: 'CASCADE',
+        references: {model: 'Games', key: 'id'},
+      },
+      notify: {
+        allowNull: false,
+        type: Sequelize.BOOLEAN,
       },
       createdAt: {
         allowNull: false,
@@ -26,9 +32,15 @@ module.exports = {
         allowNull: false,
         type: Sequelize.DATE,
       },
+    }, {
+      uniqueKeys: {
+        actions_unique: {
+          fields: ['userId', 'gameId'],
+        },
+      },
     });
   },
   down: async (queryInterface, Sequelize) => {
-    await queryInterface.dropTable('PlayTimeUsers');
+    await queryInterface.dropTable('UserGameSettings');
   },
 };
