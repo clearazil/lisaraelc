@@ -111,7 +111,7 @@ class LFG {
 
       if (this._foundRole) {
         this._foundRolesInMessage = true;
-        this.addOrRemoveRoles(gameRole, allMembers);
+        await this.addOrRemoveRoles(gameRole, allMembers);
       }
     }
 
@@ -158,7 +158,7 @@ class LFG {
       let timeStartHms;
       let timeEndHms;
 
-      notify = userModel.PlayTimes.some((playTime) => {
+      for (const playTime of userModel.PlayTimes) {
         timeStartHms = playTime.timeStart.split(':');
         timeEndHms = playTime.timeEnd.split(':');
 
@@ -171,9 +171,9 @@ class LFG {
         timeEnd.setSeconds(timeEndHms[2]);
 
         if (date > timeStart && date < timeEnd) {
-          return true;
+          notify = true;
         }
-      });
+      }
     }
 
     return notify;
