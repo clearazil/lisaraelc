@@ -62,11 +62,8 @@ class LFG {
   async addOrRemoveRoles(game, members) {
     let userGameSetting;
     let member;
-    let count = 0;
 
-    const users = await Database.findAll(db.User, {
-      include: {all: true},
-    });
+    const users = await Database.findAll(db.User);
 
     for (const user of users) {
       userGameSetting = await Database.find(db.UserGameSetting, {
@@ -78,15 +75,16 @@ class LFG {
 
       member = members.get(user.discordUserId);
 
-      count++;
-      if (userGameSetting !== null && userGameSetting.notify && await this.notifyAtThisTime(member.id)) {
+      const notifyUser = userGameSetting !== null && userGameSetting.notify && await this.notifyAtThisTime(member.id);
+      const hasRole = member.roles.cache.has(game.discordRoleId);
+      if (notifyUser && !hasRole) {
         await member.roles.add(game.discordRoleId);
-      } else {
+      }
+
+      if (!notifyUser && hasRole) {
         await member.roles.remove(game.discordRoleId);
       }
     }
-
-    console.log(`added/removed ${count} times`);
   }
 
   /**
@@ -116,6 +114,7 @@ class LFG {
     }
 
     if (this._foundRolesInMessage) {
+      console.log('sending message');
       Discord.fetchChannel(Discord.config.channels.gamingLfg).send(`${message.author.username} : ${messageReply}`);
     } else {
       message.channel.send(`${message.author} Sorry, I couldn't find any valid games in your message.`);
@@ -129,7 +128,7 @@ class LFG {
    */
   async notifyAtThisTime(userId) {
     const userModel = await Database.find(db.User, {
-      include: {all: true},
+      include: db.PlayTime,
       where: {
         DiscordUserId: userId,
       },
