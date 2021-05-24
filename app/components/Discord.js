@@ -22,8 +22,8 @@ class Discord {
 
     this._guild = null;
 
-    this._client.once('ready', () => {
-      PlayTimesMessage.send();
+    this._client.once('ready', async () => {
+      await PlayTimesMessage.send();
       PlayTimesMessage.awaitReactions();
       GameMessage.awaitReactions();
 

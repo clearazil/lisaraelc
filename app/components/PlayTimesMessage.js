@@ -70,7 +70,7 @@ class PlayTimesMessage {
         discordMessage.react(playTime.emoji);
       });
 
-      this.saveId(discordMessage);
+      await this.saveId(discordMessage);
     }
   }
 
@@ -97,7 +97,7 @@ class PlayTimesMessage {
 
         const user = await Discord.client.users.fetch(packet.d.user_id);
 
-        if (emojis.includes(emoji) && reactionMessage.id === message.id) {
+        if (emojis.includes(emoji) && reactionMessage.id === message.id && !user.bot) {
           if (packet.t === 'MESSAGE_REACTION_ADD') {
             this.saveUserTime(emoji, user);
           }
@@ -188,8 +188,8 @@ class PlayTimesMessage {
    * been sent or not
    * @param {Message} message
    */
-  saveId(message) {
-    Database.create(db.BotMessages, {
+  async saveId(message) {
+    await Database.create(db.BotMessages, {
       messageId: message.id,
       name: this.name,
     });
