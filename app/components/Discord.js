@@ -3,7 +3,6 @@ import config from '../../config/config.js';
 import DiscordJs from 'discord.js';
 import '../core/Database';
 import LFG from '../commands/LFG';
-import RoleOptionsMessage from './RoleOptionsMessage';
 import PlayTimesMessage from './PlayTimesMessage';
 import GameMessage from './GameMessage';
 import Game from '../commands/Game.js';
@@ -24,7 +23,6 @@ class Discord {
     this._guild = null;
 
     this._client.once('ready', () => {
-      RoleOptionsMessage.send();
       PlayTimesMessage.send();
       PlayTimesMessage.awaitReactions();
       GameMessage.awaitReactions();
@@ -128,14 +126,6 @@ class Discord {
     console.log('userModel', userModel, 'userModel');
 
     return userModel;
-  }
-
-  /**
-   *
-   * @return {Role}
-   */
-  get role() {
-    return this._role;
   }
 }
 

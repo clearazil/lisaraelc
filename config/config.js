@@ -27,17 +27,5 @@ export default {
       roles: process.env.DISCORD_ROLES_CHANNEL,
       games: process.env.DISCORD_GAMES_CHANNEL,
     },
-    gameRoles: [
-      {
-        roleId: '822107923924254720',
-        name: 'Valheim',
-        emoji: '⚔️',
-      },
-      {
-        roleId: '822108034196832257',
-        name: 'Minecraft',
-        emoji: '🏠',
-      },
-    ],
   },
 };

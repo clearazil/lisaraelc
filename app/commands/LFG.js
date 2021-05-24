@@ -1,7 +1,6 @@
 
 import Discord from '../components/Discord';
 import Database from '../core/Database';
-import RoleOptionsMessage from '../components/RoleOptionsMessage';
 const db = require('../../database/models');
 
 /**
@@ -12,7 +11,6 @@ class LFG {
    *
    */
   constructor() {
-    this._optionsMessage = RoleOptionsMessage;
     this._foundRole = false;
     this._foundRolesInMessage = false;
   }
@@ -176,13 +174,6 @@ class LFG {
     }
 
     return notify;
-  }
-
-  /**
-   * @return {RoleOptionsMessage}
-   */
-  get optionsMessage() {
-    return this._optionsMessage;
   }
 }
 
