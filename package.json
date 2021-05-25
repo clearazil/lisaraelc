@@ -23,6 +23,7 @@
     "core-js": "^3.9.1",
     "discord.js": "^12.5.1",
     "dotenv": "^8.2.0",
+    "luxon": "^1.27.0",
     "sequelize": "^6.5.0",
     "sqlite3": "^5.0.2"
   }

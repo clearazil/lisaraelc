@@ -7,6 +7,7 @@ import PlayTimesMessage from './PlayTimesMessage';
 import GameMessage from './GameMessage';
 import Game from '../commands/Game.js';
 import Database from '../core/Database';
+import TimeZone from '../commands/TimeZone.js';
 const db = require('../../database/models');
 
 /**
@@ -32,6 +33,7 @@ class Discord {
 
       this.addCommand(lfgCommand);
       this.addCommand(gameCommands);
+      this.addCommand(TimeZone);
     });
   }
 
@@ -104,17 +106,24 @@ class Discord {
   /**
    *
    * @param {User} discordUser
+   * @param {object} include
    * @return {db.User}
    */
-  async databaseUser(discordUser) {
+  async databaseUser(discordUser, include = null) {
     if (discordUser === undefined) {
       throw new Error('discordUser is undefined');
     }
-    let userModel = await Database.find(db.User, {
-      where: {
-        discordUserId: discordUser.id,
-      },
-    });
+
+    const options = {};
+    options['where'] = {
+      discordUserId: discordUser.id,
+    };
+
+    if (include !== null) {
+      options['include'] = include;
+    }
+
+    let userModel = await Database.find(db.User, options);
 
     if (userModel === null) {
       userModel = await Database.create(db.User, {

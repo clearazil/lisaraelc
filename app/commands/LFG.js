@@ -1,6 +1,7 @@
 
 import Discord from '../components/Discord';
 import Database from '../core/Database';
+import {DateTime} from 'luxon';
 const db = require('../../database/models');
 
 /**
@@ -112,7 +113,6 @@ class LFG {
     }
 
     if (this._foundRolesInMessage) {
-      console.log('sending message');
       Discord.fetchChannel(Discord.config.channels.gamingLfg).send(`${message.author.username} : ${messageReply}`);
     } else {
       message.channel.send(`${message.author} Sorry, I couldn't find any valid games in your message.`);
@@ -126,32 +126,38 @@ class LFG {
    */
   async notifyAtThisTime(userId) {
     const userModel = await Database.find(db.User, {
-      include: db.PlayTime,
+      include: [
+        {
+          model: db.PlayTime,
+        },
+        {
+          model: db.UserSetting,
+        },
+      ],
       where: {
         DiscordUserId: userId,
       },
     });
 
     let notify = false;
+    let timeZone = 'Europe/Amsterdam';
 
     if (userModel !== null) {
-      const options = {
-        timeZone: 'Europe/Amsterdam',
-        year: 'numeric',
-        month: 'numeric',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: 'numeric',
-        second: 'numeric',
-      };
+      let dateTime = DateTime.local().setZone(timeZone);
 
-      const formatter = new Intl.DateTimeFormat([], options);
+      if (userModel.UserSetting !== null) {
+        timeZone = userModel.UserSetting.timeZone;
+        dateTime.setZone(timeZone);
 
-      const formattedDate = formatter.format(new Date());
-      const date = new Date(formattedDate);
+        if (userModel.UserSetting.timeZoneDifference === '+') {
+          dateTime = dateTime.plus({hours: userModel.UserSetting.timeZoneOffset});
+        }
 
-      const timeStart = new Date(formattedDate);
-      const timeEnd = new Date(formattedDate);
+        if (userModel.UserSetting.timeZoneDifference === '-') {
+          dateTime = dateTime.minus({hours: userModel.UserSetting.timeZoneOffset});
+        }
+      }
+
       let timeStartHms;
       let timeEndHms;
 
@@ -159,15 +165,10 @@ class LFG {
         timeStartHms = playTime.timeStart.split(':');
         timeEndHms = playTime.timeEnd.split(':');
 
-        timeStart.setHours(timeStartHms[0]);
-        timeStart.setMinutes(timeStartHms[1]);
-        timeStart.setSeconds(timeStartHms[2]);
+        const timeStart = dateTime.set({hour: timeStartHms[0], minute: timeStartHms[1], second: timeStartHms[2]});
+        const timeEnd = dateTime.set({hour: timeEndHms[0], minute: timeEndHms[1], second: timeEndHms[2]});
 
-        timeEnd.setHours(timeEndHms[0]);
-        timeEnd.setMinutes(timeEndHms[1]);
-        timeEnd.setSeconds(timeEndHms[2]);
-
-        if (date > timeStart && date < timeEnd) {
+        if (dateTime.toSeconds() > timeStart.toSeconds() && dateTime.toSeconds() < timeEnd.toSeconds()) {
           notify = true;
         }
       }
