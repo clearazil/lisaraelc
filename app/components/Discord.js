@@ -2,12 +2,14 @@
 import config from '../../config/config.js';
 import DiscordJs from 'discord.js';
 import '../core/Database';
-import LFG from '../commands/LFG';
+import LFG from '../commands/LFG.js';
 import PlayTimesMessage from './PlayTimesMessage';
 import GameMessage from './GameMessage';
 import Game from '../commands/Game.js';
 import Database from '../core/Database';
 import TimeZone from '../commands/TimeZone.js';
+import ListCommands from '../commands/ListCommands.js';
+
 const db = require('../../database/models');
 
 /**
@@ -28,12 +30,13 @@ class Discord {
       PlayTimesMessage.awaitReactions();
       GameMessage.awaitReactions();
 
-      const lfgCommand = new LFG;
-      const gameCommands = new Game;
+      const commandClasses = [LFG, Game, TimeZone];
+      const listCommands = new ListCommands(commandClasses);
+      commandClasses.push(listCommands);
 
-      this.addCommand(lfgCommand);
-      this.addCommand(gameCommands);
-      this.addCommand(TimeZone);
+      commandClasses.forEach((className) => {
+        this.addCommands(className);
+      });
     });
   }
 
@@ -71,22 +74,54 @@ class Discord {
   }
 
   /**
-   * @param {Object} command
+   * @param {Object} commandClass
    */
-  addCommand(command) {
-    this.client.on('message', (message) => {
-      if (typeof command.name === 'object') {
-        for (const [key, commandName] of command.name) {
-          if (message.content.startsWith(commandName)) {
-            command[key](message);
+  addCommands(commandClass) {
+    const commands = commandClass.commands;
+
+    this.client.on('message', async (message) => {
+      try {
+        for (const [key, commandMap] of commands) {
+          if (await this.runCommand(message, commandMap, key)) {
+            commandClass[key](message);
           }
         }
-      } else {
-        if (message.content.startsWith(command.name)) {
-          command.action(message);
-        }
+      } catch (error) {
+        message.channel.send(`${message.author} Sorry, an error occured while setting your time zone.`);
+        console.error(error);
       }
     });
+  }
+
+  /**
+   *
+   * @param {Object} message
+   * @param {Map} commandMap
+   * @param {string} commandName
+   * @return {bool}
+   */
+  async runCommand(message, commandMap, commandName) {
+    const guild = await this.fetchGuild();
+    const member = guild.member(message.author.id);
+
+    if (message.author.bot) {
+      return false;
+    }
+
+    if (commandName === 'lfg' && message.channel.id !== this.config.channels.gamingLfg) {
+      return false;
+    }
+
+    if (commandName !== 'lfg' && !message.content.startsWith(commandMap.command)) {
+      return false;
+    }
+
+    if (commandMap.moderatorOnly && !member.roles.cache.has(this.config.moderatorRoleId)) {
+      message.channel.send(`${message.author} Sorry, you do not have access to that command.`);
+      return false;
+    }
+
+    return true;
   }
 
   /**
@@ -131,8 +166,6 @@ class Discord {
         name: discordUser.username,
       });
     }
-
-    console.log('userModel', userModel, 'userModel');
 
     return userModel;
   }

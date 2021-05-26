@@ -19,6 +19,7 @@ export default {
       positive: '✅',
       negative: '❌',
     },
+    moderatorRoleId: process.env.DISCORD_MODERATOR_ROLE,
     serverId: process.env.DISCORD_SERVER_ID,
     token: process.env.DISCORD_TOKEN,
     channels: {

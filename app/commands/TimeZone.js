@@ -8,77 +8,80 @@ import {DateTime} from 'luxon';
  */
 class TimeZone {
   /**
-   * @return {string}
+   * @return {Map}
    */
-  get name() {
-    return '!timeZone';
+  get commands() {
+    const commands = new Map();
+
+    commands.set('timeZone', {
+      command: '!timeZone',
+      moderatorOnly: false,
+      get description() {
+        return `\`\`${this.command} <time zone name>\`\` sets your time zone.`;
+      },
+    });
+
+    return commands;
   }
 
   /**
    * @param {Message} message
    */
-  async action(message) {
-    try {
-      const timeZoneInput = message.content.replace(this.name, '').trim();
+  async timeZone(message) {
+    const timeZoneInput = message.content.replace(this.commands.get('timeZone').command, '').trim();
 
-      let timeZone = null;
-      let timeZoneDifference = null;
-      let timeZoneOffset = null;
+    let timeZone = null;
+    let timeZoneDifference = null;
+    let timeZoneOffset = null;
 
-      const regExp = new RegExp(/([a-z/]*)([/+-])?(\d{1,2})?/, 'i');
-      const found = timeZoneInput.match(regExp);
+    const regExp = new RegExp(/([a-z/]*)([/+-])?(\d{1,2})?/, 'i');
+    const found = timeZoneInput.match(regExp);
 
-      let dateTime = null;
+    let dateTime = null;
 
-      console.log(found);
+    if (found !== null) {
+      dateTime = DateTime.local().setZone(found[1]);
+      timeZone = found[1];
 
-      if (found !== null) {
-        dateTime = DateTime.local().setZone(found[1]);
-        timeZone = found[1];
+      if (found[3] !== undefined && found[3].length > 0) {
+        timeZoneDifference = found[2];
+        timeZoneOffset = found[3];
 
-        if (found[3] !== undefined && found[3].length > 0) {
-          timeZoneDifference = found[2];
-          timeZoneOffset = found[3];
-
-          switch (found[2]) {
-            case '+':
-              dateTime = dateTime.plus({hours: found[3]});
-              break;
-            case '-':
-              dateTime = dateTime.minus({hours: found[3]});
-              break;
-          }
+        switch (found[2]) {
+          case '+':
+            dateTime = dateTime.plus({hours: found[3]});
+            break;
+          case '-':
+            dateTime = dateTime.minus({hours: found[3]});
+            break;
         }
       }
-
-      if (found === null || (dateTime !== null && !dateTime.isValid)) {
-        // eslint-disable-next-line max-len
-        message.channel.send(`${message.author} Sorry, the time zone ${timeZoneInput} is invalid.\n\nSee this link for a list of valid timezones:\n<https://gist.github.com/diogocapela/12c6617fc87607d11fd62d2a4f42b02a>`);
-        return;
-      }
-
-      const user = await Discord.databaseUser(message.author, db.UserSetting);
-
-      if (user.UserSetting !== null) {
-        user.UserSetting.timeZone = timeZone;
-        user.UserSetting.timeZoneDifference = timeZoneDifference;
-        user.UserSetting.timeZoneOffset = timeZoneOffset;
-        await user.UserSetting.save();
-      } else {
-        await Database.create(db.UserSetting, {
-          userId: user.id,
-          timeZone: timeZone,
-          timeZoneDifference: timeZoneDifference,
-          timeZoneOffset: timeZoneOffset,
-        });
-      }
-
-      // eslint-disable-next-line max-len
-      message.channel.send(`${message.author} Your time zone has been set! Your local time is: ${dateTime.toLocaleString(DateTime.TIME_24_SIMPLE)}`);
-    } catch (error) {
-      console.error(error);
-      message.channel.send(`${message.author} Sorry, an error occured while setting your time zone.`);
     }
+
+    if (found === null || (dateTime !== null && !dateTime.isValid)) {
+      // eslint-disable-next-line max-len
+      message.channel.send(`${message.author} Sorry, the time zone ${timeZoneInput} is invalid.\n\nSee this link for a list of valid timezones:\n<https://gist.github.com/diogocapela/12c6617fc87607d11fd62d2a4f42b02a>`);
+      return;
+    }
+
+    const user = await Discord.databaseUser(message.author, db.UserSetting);
+
+    if (user.UserSetting !== null) {
+      user.UserSetting.timeZone = timeZone;
+      user.UserSetting.timeZoneDifference = timeZoneDifference;
+      user.UserSetting.timeZoneOffset = timeZoneOffset;
+      await user.UserSetting.save();
+    } else {
+      await Database.create(db.UserSetting, {
+        userId: user.id,
+        timeZone: timeZone,
+        timeZoneDifference: timeZoneDifference,
+        timeZoneOffset: timeZoneOffset,
+      });
+    }
+
+    // eslint-disable-next-line max-len
+    message.channel.send(`${message.author} Your time zone has been set! Your local time is: ${dateTime.toLocaleString(DateTime.TIME_24_SIMPLE)}`);
   }
 }
 

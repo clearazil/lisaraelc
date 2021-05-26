@@ -18,10 +18,17 @@ class LFG {
 
 
   /**
-   * @return {string}
+   * @return {Map}
    */
-  get name() {
-    return '!lfg';
+  get commands() {
+    const commands = new Map();
+
+    commands.set('lfg', {
+      command: '!lfg',
+      moderatorOnly: false,
+    });
+
+    return commands;
   }
 
   /**
@@ -89,9 +96,9 @@ class LFG {
   /**
    * @param {Message} message
    */
-  async action(message) {
+  async lfg(message) {
     this._foundRolesInMessage = false;
-    let messageReply = message.content.replace(this.name, '').trim();
+    let messageReply = message.content;
 
     const gameRoles = await Database.findAll(db.Game, {
       include: {all: true},
@@ -113,9 +120,9 @@ class LFG {
     }
 
     if (this._foundRolesInMessage) {
-      Discord.fetchChannel(Discord.config.channels.gamingLfg).send(`${message.author.username} : ${messageReply}`);
-    } else {
-      message.channel.send(`${message.author} Sorry, I couldn't find any valid games in your message.`);
+      await message.delete();
+      await Discord.fetchChannel(Discord.config.channels.gamingLfg)
+          .send(`${message.author.username} : ${messageReply}`);
     }
   }
 
@@ -178,4 +185,4 @@ class LFG {
   }
 }
 
-export default LFG;
+export default new LFG;
