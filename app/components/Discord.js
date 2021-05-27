@@ -84,11 +84,11 @@ class Discord {
       try {
         for (const [key, commandMap] of commands) {
           if (await this.runCommand(message, commandMap, key)) {
-            commandClass[key](message);
+            await commandClass[key](message);
           }
         }
       } catch (error) {
-        message.channel.send(`${message.author} Sorry, an error occured while setting your time zone.`);
+        message.channel.send(`${message.author} Sorry, an error occured while running this command.`);
         console.error(error);
       }
     });
