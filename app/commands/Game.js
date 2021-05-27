@@ -16,7 +16,7 @@ class Game {
       command: '!addGame',
       moderatorOnly: true,
       get description() {
-        return `\`\`${this.command} <game name>\`\` remove a game.`;
+        return `\`\`${this.command} <game name>\`\` add a game.`;
       },
     });
     commands.set('remove', {
