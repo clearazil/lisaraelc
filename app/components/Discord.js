@@ -9,6 +9,7 @@ import Game from '../commands/Game.js';
 import Database from '../core/Database';
 import TimeZone from '../commands/TimeZone.js';
 import ListCommands from '../commands/ListCommands.js';
+import Settings from '../commands/Settings.js';
 
 const db = require('../../database/models');
 
@@ -30,7 +31,7 @@ class Discord {
       PlayTimesMessage.awaitReactions();
       GameMessage.awaitReactions();
 
-      const commandClasses = [LFG, Game, TimeZone];
+      const commandClasses = [LFG, Game, TimeZone, Settings];
       const listCommands = new ListCommands(commandClasses);
       commandClasses.push(listCommands);
 

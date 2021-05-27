@@ -2,6 +2,7 @@ const db = require('../../database/models');
 import Discord from '../components/Discord';
 import Database from '../core/Database';
 import {DateTime} from 'luxon';
+import Helper from '../core/Helper';
 
 /**
  *
@@ -40,21 +41,12 @@ class TimeZone {
     let dateTime = null;
 
     if (found !== null) {
-      dateTime = DateTime.local().setZone(found[1]);
+      dateTime = Helper.dateTimeFromTimeZone(found[1], found[2], found[3]);
       timeZone = found[1];
 
       if (found[3] !== undefined && found[3].length > 0) {
         timeZoneDifference = found[2];
         timeZoneOffset = found[3];
-
-        switch (found[2]) {
-          case '+':
-            dateTime = dateTime.plus({hours: found[3]});
-            break;
-          case '-':
-            dateTime = dateTime.minus({hours: found[3]});
-            break;
-        }
       }
     }
 
