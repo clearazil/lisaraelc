@@ -23,6 +23,9 @@ module.exports = {
       timeZoneOffset: {
         type: Sequelize.INTEGER,
       },
+      notifyAllGames: {
+        type: Sequelize.BOOLEAN,
+      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE,

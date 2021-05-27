@@ -1,33 +1,13 @@
 
 import Discord from './Discord';
 import Database from '../core/Database';
+import DiscordMessage from './DiscordMessage';
 const db = require('../../database/models');
 
 /**
  *
  */
-class PlayTimesMessage {
-  /**
-   *
-   */
-  constructor() {
-    this._message = null;
-  }
-
-  /**
-   *
-   * @return {Message}
-   */
-  async get() {
-    if (this._message === null) {
-      const dbMessage = await this.find();
-
-      this._message = await Discord.rolesChannel.messages.fetch(dbMessage.messageId);
-    }
-
-    return this._message;
-  }
-
+class PlayTimesMessage extends DiscordMessage {
   /**
    *
    * @param {string} emoji
@@ -56,7 +36,7 @@ class PlayTimesMessage {
     if (!await this.exists()) {
       const rolesChannel = Discord.rolesChannel;
 
-      let message = 'React with the emoji\'s below to set the time periods you want to be notified.\n\n';
+      let message = 'React with the emoji\'s below to set the time periods you want to be notified:\n\n';
 
       const playTimes = await Database.findAll(db.PlayTime);
 
@@ -160,39 +140,6 @@ class PlayTimesMessage {
    */
   ucfirst(string) {
     return string.charAt(0).toUpperCase() + string.slice(1);
-  }
-
-  /**
-   * @return {Promise}
-   */
-  async find() {
-    return Database.find(db.BotMessages, {
-      where: {
-        name: this.name,
-      },
-    });
-  }
-
-  /**
-   *
-   * @return {Promise}
-   */
-  async exists() {
-    return await this.find();
-  }
-
-  /**
-   * Save the id of the role selection
-   * message, so next time the bot restarts
-   * we can check if the message has already
-   * been sent or not
-   * @param {Message} message
-   */
-  async saveId(message) {
-    await Database.create(db.BotMessages, {
-      messageId: message.id,
-      name: this.name,
-    });
   }
 }
 

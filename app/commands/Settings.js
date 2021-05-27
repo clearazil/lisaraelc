@@ -69,7 +69,7 @@ class Settings {
     let messageReply = '**Time zone:**\n';
     let timeZoneMessage = 'You do not have a time zone set. Using the default time zone (CET).\n';
 
-    if (user.UserSetting !== undefined || user.UserSetting !== null) {
+    if ((user.UserSetting !== undefined || user.UserSetting !== null) && user.UserSetting.timeZone !== null) {
       const difference = user.UserSetting.timeZoneDifference !== null ? user.UserSetting.timeZoneDifference : '';
       const offset = user.UserSetting.timeZoneOffset !== null ? user.UserSetting.timeZoneOffset : '';
       timeZoneMessage = `Your time zone is set as ${user.UserSetting.timeZone}${difference}${offset}.\n`;
@@ -83,9 +83,19 @@ class Settings {
     }
 
     messageReply += timeZoneMessage;
+
+    messageReply += '\n**Notify for all games:**\n';
+    let notifyAllGamesMessage = 'No\n';
+
+    if ((user.UserSetting !== undefined || user.UserSetting !== null) && user.UserSetting.notifyAllGames === true) {
+      notifyAllGamesMessage = 'Yes\n';
+    }
+
+    messageReply += notifyAllGamesMessage;
+
     messageReply += '\n**Availability times:**\n';
     let playTimesMessage = 'You do not have any times set.\n';
-    if (user.PlayTimes !== undefined || user.PlayTimes.length > 0) {
+    if (user.PlayTimes !== undefined && user.PlayTimes.length > 0) {
       playTimesMessage = '';
       for (const playTime of user.PlayTimes) {
         playTimesMessage += `${playTime.timeStart} - ${playTime.timeEnd}\n`;
@@ -95,7 +105,7 @@ class Settings {
     messageReply += playTimesMessage;
     messageReply += '\n**Games you are interested in:**\n';
 
-    let interestedMessage = 'No games set.';
+    let interestedMessage = 'No games set.\n';
 
     if (interestedGames.length > 0) {
       interestedMessage = '';

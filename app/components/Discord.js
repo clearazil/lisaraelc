@@ -10,6 +10,7 @@ import Database from '../core/Database';
 import TimeZone from '../commands/TimeZone.js';
 import ListCommands from '../commands/ListCommands.js';
 import Settings from '../commands/Settings.js';
+import NotifyAnyGameMessage from './NotifyAnyGameMessage.js';
 
 const db = require('../../database/models');
 
@@ -28,8 +29,10 @@ class Discord {
 
     this._client.once('ready', async () => {
       await PlayTimesMessage.send();
+      await NotifyAnyGameMessage.send();
       PlayTimesMessage.awaitReactions();
       GameMessage.awaitReactions();
+      NotifyAnyGameMessage.awaitReactions();
 
       const commandClasses = [LFG, Game, TimeZone, Settings];
       const listCommands = new ListCommands(commandClasses);
@@ -166,6 +169,8 @@ class Discord {
         discordUserId: discordUser.id,
         name: discordUser.username,
       });
+
+      userModel = await Database.find(db.User, options);
     }
 
     return userModel;

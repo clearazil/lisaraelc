@@ -66,22 +66,14 @@ class LFG {
    * @param {object} members
    */
   async addOrRemoveRoles(game, members) {
-    let userGameSetting;
     let member;
 
     const users = await Database.findAll(db.User);
 
     for (const user of users) {
-      userGameSetting = await Database.find(db.UserGameSetting, {
-        where: {
-          userId: user.id,
-          gameId: game.id,
-        },
-      });
-
       member = members.get(user.discordUserId);
 
-      const notifyUser = userGameSetting !== null && userGameSetting.notify && await this.notifyAtThisTime(member.id);
+      const notifyUser = await this.notifyAtThisTime(game.id, user.id);
       const hasRole = member.roles.cache.has(game.discordRoleId);
       if (notifyUser && !hasRole) {
         await member.roles.add(game.discordRoleId);
@@ -127,11 +119,14 @@ class LFG {
   }
 
   /**
-   *
+   * @param {string} gameId
    * @param {string} userId
    * @return {bool}
    */
-  async notifyAtThisTime(userId) {
+  async notifyAtThisTime(gameId, userId) {
+    let notifyAllGames = false;
+    let notifyForGame = false;
+
     const userModel = await Database.find(db.User, {
       include: [
         {
@@ -142,7 +137,7 @@ class LFG {
         },
       ],
       where: {
-        DiscordUserId: userId,
+        id: userId,
       },
     });
 
@@ -153,6 +148,8 @@ class LFG {
       let dateTime = DateTime.local().setZone(timeZone);
 
       if (userModel.UserSetting !== null) {
+        notifyAllGames = userModel.UserSetting.notifyAllGames === true;
+
         timeZone = userModel.UserSetting.timeZone;
         dateTime.setZone(timeZone);
 
@@ -181,7 +178,26 @@ class LFG {
       }
     }
 
-    return notify;
+    const userGameSetting = await Database.find(db.UserGameSetting, {
+      where: {
+        userId: userId,
+        gameId: gameId,
+      },
+    });
+
+    if (userGameSetting === null && notifyAllGames) {
+      notifyForGame = true;
+    }
+
+    if (userGameSetting !== null && userGameSetting.notify) {
+      notifyForGame = true;
+    }
+
+    if (userGameSetting !== null && userGameSetting.notify !== false && notifyAllGames) {
+      notifyForGame = true;
+    }
+
+    return notify && notifyForGame;
   }
 }
 

@@ -22,6 +22,7 @@ module.exports = (sequelize, DataTypes) => {
     timeZone: DataTypes.STRING,
     timeZoneDifference: DataTypes.STRING,
     timeZoneOffset: DataTypes.INTEGER,
+    notifyAllGames: DataTypes.BOOLEAN,
   }, {
     sequelize,
     modelName: 'UserSetting',
