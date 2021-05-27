@@ -69,7 +69,7 @@ class Settings {
     let messageReply = '**Time zone:**\n';
     let timeZoneMessage = 'You do not have a time zone set. Using the default time zone (CET).\n';
 
-    if ((user.UserSetting !== undefined || user.UserSetting !== null) && user.UserSetting.timeZone !== null) {
+    if ((user.UserSetting !== undefined && user.UserSetting !== null) && user.UserSetting.timeZone !== null) {
       const difference = user.UserSetting.timeZoneDifference !== null ? user.UserSetting.timeZoneDifference : '';
       const offset = user.UserSetting.timeZoneOffset !== null ? user.UserSetting.timeZoneOffset : '';
       timeZoneMessage = `Your time zone is set as ${user.UserSetting.timeZone}${difference}${offset}.\n`;
@@ -87,7 +87,7 @@ class Settings {
     messageReply += '\n**Notify for all games:**\n';
     let notifyAllGamesMessage = 'No\n';
 
-    if ((user.UserSetting !== undefined || user.UserSetting !== null) && user.UserSetting.notifyAllGames === true) {
+    if ((user.UserSetting !== undefined && user.UserSetting !== null) && user.UserSetting.notifyAllGames === true) {
       notifyAllGamesMessage = 'Yes\n';
     }
 
