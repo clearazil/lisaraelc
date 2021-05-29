@@ -35,7 +35,7 @@ class TimeZone {
     let timeZoneDifference = null;
     let timeZoneOffset = null;
 
-    const regExp = new RegExp(/([a-z/]*)([/+-])?(\d{1,2})?/, 'i');
+    const regExp = new RegExp(/([a-z/_]*-?(?=[a-z])[a-z]*)([/+-])?(\d{1,2})?/, 'i');
     const found = timeZoneInput.match(regExp);
 
     let dateTime = null;
