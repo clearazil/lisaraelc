@@ -19,7 +19,7 @@ module.exports = (sequelize, DataTypes) => {
   };
   BotMessages.init({
     messageId: DataTypes.STRING,
-    name: DataTypes.STRING
+    name: DataTypes.STRING,
   }, {
     sequelize,
     modelName: 'BotMessages',

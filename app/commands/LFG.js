@@ -151,7 +151,7 @@ class LFG {
         notifyAllGames = userModel.UserSetting.notifyAllGames === true;
 
         timeZone = userModel.UserSetting.timeZone;
-        dateTime.setZone(timeZone);
+        dateTime = dateTime.setZone(timeZone);
 
         if (userModel.UserSetting.timeZoneDifference === '+') {
           dateTime = dateTime.plus({hours: userModel.UserSetting.timeZoneOffset});
