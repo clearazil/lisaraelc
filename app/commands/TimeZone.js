@@ -29,7 +29,8 @@ class TimeZone {
    * @param {Message} message
    */
   async timeZone(message) {
-    const timeZoneInput = message.content.replace(this.commands.get('timeZone').command, '').trim();
+    let timeZoneInput = message.content.replace(this.commands.get('timeZone').command, '').trim();
+    timeZoneInput = timeZoneInput.replace(' ', '_');
 
     let timeZone = null;
     let timeZoneDifference = null;
