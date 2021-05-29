@@ -94,6 +94,9 @@ class LFG {
 
     const gameRoles = await Database.findAll(db.Game, {
       include: {all: true},
+      order: [
+        ['name', 'DESC'],
+      ],
     });
 
     const guild = await Discord.fetchGuild();
