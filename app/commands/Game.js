@@ -57,6 +57,11 @@ class Game {
   async add(message) {
     const roleName = message.content.replace(this.commands.get('add').command, '').trim();
 
+    if (!(roleName.length > 0)) {
+      message.channel.send(`${message.author} You need submit a game name to add.`);
+      return;
+    }
+
     const guild = await Discord.fetchGuild();
 
     const exists = await Database.find(db.Game, {
@@ -96,6 +101,11 @@ class Game {
    */
   async remove(message) {
     const roleName = message.content.replace(this.commands.get('remove').command, '').trim();
+
+    if (!(roleName.length > 0)) {
+      message.channel.send(`${message.author} You need to submit a game name to remove.`);
+      return;
+    }
 
     const guild = await Discord.fetchGuild();
 
@@ -183,7 +193,12 @@ class Game {
    * @param {Message} message
    */
   async removeAlias(message) {
-    const aliasName = message.content.replace(this.name.get('removeAlias').command, '').trim();
+    const aliasName = message.content.replace(this.commands.get('removeAlias').command, '').trim();
+
+    if (!(aliasName.length > 0)) {
+      message.channel.send(`${message.author} You need to submit an alias name to remove.`);
+      return;
+    }
 
     const alias = await Database.find(db.GameAlias, {
       include: {all: true},
@@ -211,6 +226,11 @@ class Game {
    */
   async aliases(message) {
     const roleName = message.content.replace(this.commands.get('aliases').command, '').trim();
+
+    if (!(roleName.length > 0)) {
+      message.channel.send(`${message.author} You need submit a game name to list the aliases for it.`);
+      return;
+    }
 
     const game = await Database.find(db.Game, {
       include: {all: true},
