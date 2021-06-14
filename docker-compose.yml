@@ -11,6 +11,6 @@ services:
     volumes:
       [.:/app]
     ports:
-      [1234:1234]
+      [1234:1234, 9229:9229]
     container_name: lisaraelc-node
     tty: true

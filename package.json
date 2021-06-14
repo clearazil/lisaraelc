@@ -8,7 +8,9 @@
   "main": "js/app.js",
   "scripts": {
     "sequelize": "sequelize $*",
-    "bot": "node --trace-warnings app/babelHook.js"
+    "bot": "node app/babelHook.js",
+    "bot-debug": "node --inspect-brk=0.0.0.0 --trace-warnings app/babelHook.js",
+    "bot-dev": "node --trace-warnings app/babelHook.js"
   },
   "devDependencies": {
     "@babel/core": "^7.13.10",

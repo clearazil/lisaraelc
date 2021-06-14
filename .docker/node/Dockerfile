@@ -18,3 +18,4 @@ RUN npm install
 USER $user
 
 EXPOSE 1234
+EXPOSE 9229
