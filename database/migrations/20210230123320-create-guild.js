@@ -10,8 +10,12 @@ module.exports = {
       },
       discordGuildId: {
         type: Sequelize.STRING,
+        unique: true,
       },
-      moderatorId: {
+      name: {
+        type: Sequelize.STRING,
+      },
+      moderatorRoleId: {
         type: Sequelize.STRING,
       },
       settingsChannelId: {

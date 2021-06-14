@@ -28,11 +28,17 @@ class Discord {
     this._guild = null;
 
     this._client.once('ready', async () => {
-      await PlayTimesMessage.send();
-      await NotifyAnyGameMessage.send();
-      PlayTimesMessage.awaitReactions();
-      GameMessage.awaitReactions();
-      NotifyAnyGameMessage.awaitReactions();
+      let dbGuild;
+
+      for (const guild of this._client.guilds.cache.values()) {
+        dbGuild = await this.databaseGuild(guild);
+
+        await PlayTimesMessage.send(dbGuild);
+        await NotifyAnyGameMessage.send(dbGuild);
+        PlayTimesMessage.awaitReactions(dbGuild);
+        GameMessage.awaitReactions(dbGuild);
+        NotifyAnyGameMessage.awaitReactions(dbGuild);
+      }
 
       const commandClasses = [LFG, Game, TimeZone, Settings];
       const listCommands = new ListCommands(commandClasses);
@@ -145,18 +151,23 @@ class Discord {
   /**
    *
    * @param {User} discordUser
+   * @param {db.Guild} dbGuild
    * @param {object} include
    * @return {db.User}
    */
-  async databaseUser(discordUser, include = null) {
+  async databaseUser(discordUser, dbGuild, include = null) {
     if (discordUser === undefined) {
       throw new Error('discordUser is undefined');
+    }
+
+    if (dbGuild === undefined) {
+      throw new Error('dbGuild is undefined');
     }
 
     const options = {};
     options['where'] = {
       discordUserId: discordUser.id,
-      guildId: this._guildId,
+      guildId: dbGuild.id,
     };
 
     if (include !== null) {
@@ -169,13 +180,32 @@ class Discord {
       userModel = await Database.create(db.User, {
         discordUserId: discordUser.id,
         name: discordUser.username,
-        guildId: this._guildId,
+        guildId: dbGuild.id,
       });
 
       userModel = await Database.find(db.User, options);
     }
 
     return userModel;
+  }
+
+  /**
+   *
+   * @param {Guild} discordGuild
+   * @return {db.Guild}
+   */
+  async databaseGuild(discordGuild) {
+    if (discordGuild === undefined) {
+      throw new Error('discordGuild is undefined');
+    }
+
+    console.log(discordGuild, discordGuild.id);
+
+    return await Database.find(db.Guild, {
+      where: {
+        discordGuildId: discordGuild.id,
+      },
+    });
   }
 }
 

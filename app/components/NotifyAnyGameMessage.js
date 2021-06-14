@@ -47,9 +47,9 @@ class PlayTimesMessage extends DiscordMessage {
   }
 
   /**
-   *
+   * @param {db.Guild} dbGuild
    */
-  async awaitReactions() {
+  async awaitReactions(dbGuild) {
     const message = await this.get();
 
     Discord.client.on('raw', async (packet) => {
@@ -74,7 +74,7 @@ class PlayTimesMessage extends DiscordMessage {
         }
 
         if (notifyAllGames !== null) {
-          const user = await Discord.databaseUser(discordUser, db.UserSetting);
+          const user = await Discord.databaseUser(discordUser, dbGuild, db.UserSetting);
 
           if (user.UserSetting !== null) {
             user.UserSetting.notifyAllGames = notifyAllGames;

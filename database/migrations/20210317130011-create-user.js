@@ -28,6 +28,12 @@ module.exports = {
         allowNull: false,
         type: Sequelize.DATE,
       },
+    }, {
+      uniqueKeys: {
+        actions_unique: {
+          fields: ['guildId', 'discordUserId'],
+        },
+      },
     });
   },
   down: async (queryInterface, Sequelize) => {

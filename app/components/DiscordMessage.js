@@ -12,6 +12,7 @@ class DiscordMessage {
    */
   constructor() {
     this._message = null;
+    this._dbGuild = null;
   }
 
   /**
@@ -34,6 +35,7 @@ class DiscordMessage {
   async find() {
     return Database.find(db.BotMessages, {
       where: {
+        guildId: this._dbGuild.id,
         name: this.name,
       },
     });
@@ -56,6 +58,7 @@ class DiscordMessage {
    */
   async saveId(message) {
     await Database.create(db.BotMessages, {
+      guildId: this._dbGuild.id,
       messageId: message.id,
       name: this.name,
     });

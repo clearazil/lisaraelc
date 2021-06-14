@@ -21,6 +21,7 @@ export default {
     },
     moderatorRoleId: process.env.DISCORD_MODERATOR_ROLE,
     serverId: process.env.DISCORD_SERVER_ID,
+    serverName: process.env.DISCORD_SERVER_NAME,
     token: process.env.DISCORD_TOKEN,
     channels: {
       gamingLfg: process.env.DISCORD_GAME_CHANNEL,

@@ -7,14 +7,16 @@ const db = require('../../database/models');
  */
 class GameMessage {
   /**
-   *
+   * @param {db.Guild} dbGuild
    */
-  async awaitReactions() {
+  async awaitReactions(dbGuild) {
+    this._dbGuild = dbGuild;
+
     try {
       const positiveEmoji = Discord.config.emojis.positive;
       const negativeEmoji = Discord.config.emojis.negative;
 
-      const gamesChannel = await Discord.fetchChannel(Discord.config.channels.games);
+      const gamesChannel = await Discord.fetchChannel(this._dbGuild.gamesChannelId);
 
       Discord.client.on('raw', async (packet) => {
         if (['MESSAGE_REACTION_REMOVE', 'MESSAGE_REACTION_ADD'].includes(packet.t) &&
@@ -27,6 +29,7 @@ class GameMessage {
 
           const game = await Database.find(db.Game, {
             where: {
+              guildId: this._dbGuild.id,
               discordMessageId: packet.d.message_id,
             },
           });
@@ -89,7 +92,7 @@ class GameMessage {
    * @param {db.Game} game
    */
   async saveUserGame(notify, user, game) {
-    const databaseUser = await Discord.databaseUser(user);
+    const databaseUser = await Discord.databaseUser(user, this._dbGuild);
 
     const userGameSetting = await Database.find(db.UserGameSetting, {
       where: {
@@ -118,7 +121,7 @@ class GameMessage {
    * @param {db.Game} game
    */
   async deleteUserGame(user, game) {
-    const databaseUser = await Discord.databaseUser(user);
+    const databaseUser = await Discord.databaseUser(user, this._dbGuild);
 
     await db.UserGameSetting.destroy({
       where: {

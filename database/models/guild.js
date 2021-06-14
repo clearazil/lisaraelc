@@ -15,14 +15,15 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       Guild.hasMany(models.User);
-      Guild.hasMany(models.BotMessage);
+      Guild.hasMany(models.BotMessages);
       Guild.hasMany(models.Game);
       Guild.hasMany(models.PlayTime);
     }
   };
   Guild.init({
     discordGuildId: DataTypes.STRING,
-    moderatorId: DataTypes.STRING,
+    name: DataTypes.STRING,
+    moderatorRoleId: DataTypes.STRING,
     settingsChannelId: DataTypes.STRING,
     gamesChannelId: DataTypes.STRING,
     playingChannelId: DataTypes.STRING,

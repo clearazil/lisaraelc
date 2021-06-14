@@ -55,12 +55,18 @@ class PlayTimesMessage extends DiscordMessage {
   }
 
   /**
-   *
+   * @param {db.Guild} dbGuild
    */
-  async awaitReactions() {
+  async awaitReactions(dbGuild) {
+    this._dbGuild = dbGuild;
+
     const message = await this.get();
 
-    const playTimes = await Database.findAll(db.PlayTime);
+    const playTimes = await Database.findAll(db.PlayTime, [{
+      where: {
+        guildId: dbGuild.id,
+      },
+    }]);
     const emojis = [];
 
     playTimes.forEach((playTime) => {
@@ -95,10 +101,11 @@ class PlayTimesMessage extends DiscordMessage {
    * @param {Object} user
    */
   async saveUserTime(emoji, user) {
-    const userModel = await Discord.databaseUser(user);
+    const userModel = await Discord.databaseUser(user, this._dbGuild);
 
     const playTime = await Database.find(db.PlayTime, {
       where: {
+        guildId: this._dbGuild.id,
         emoji: emoji,
       },
     });
@@ -115,10 +122,11 @@ class PlayTimesMessage extends DiscordMessage {
    * @param {Object} user
    */
   async deleteUserTime(emoji, user) {
-    const userModel = await Discord.databaseUser(user);
+    const userModel = await Discord.databaseUser(user, this._dbGuild);
 
     const playTime = await Database.find(db.PlayTime, {
       where: {
+        guildId: this._dbGuild.id,
         emoji: emoji,
       },
     });

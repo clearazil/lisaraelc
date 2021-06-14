@@ -14,7 +14,7 @@ module.exports = (sequelize, DataTypes) => {
      * @param {unknown} models
      */
     static associate(models) {
-      BotMessages.hasOne(models.guild);
+      BotMessages.hasOne(models.Guild);
     }
   };
   BotMessages.init({
