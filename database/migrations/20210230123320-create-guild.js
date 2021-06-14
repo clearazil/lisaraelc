@@ -1,23 +1,29 @@
 'use strict';
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    await queryInterface.createTable('BotMessages', {
+    await queryInterface.createTable('Guilds', {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: Sequelize.INTEGER,
       },
-      guildId: {
-        allowNull: false,
-        type: Sequelize.INTEGER,
-        onDelete: 'CASCADE',
-        references: {model: 'Guilds', key: 'id'},
-      },
-      messageId: {
+      discordGuildId: {
         type: Sequelize.STRING,
       },
-      name: {
+      moderatorId: {
+        type: Sequelize.STRING,
+      },
+      settingsChannelId: {
+        type: Sequelize.STRING,
+      },
+      gamesChannelId: {
+        type: Sequelize.STRING,
+      },
+      playingChannelId: {
+        type: Sequelize.STRING,
+      },
+      botChannelId: {
         type: Sequelize.STRING,
       },
       createdAt: {
@@ -31,6 +37,6 @@ module.exports = {
     });
   },
   down: async (queryInterface, Sequelize) => {
-    await queryInterface.dropTable('BotMessages');
+    await queryInterface.dropTable('Guilds');
   },
 };

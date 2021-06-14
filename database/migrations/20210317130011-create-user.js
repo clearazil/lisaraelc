@@ -8,6 +8,12 @@ module.exports = {
         primaryKey: true,
         type: Sequelize.INTEGER,
       },
+      guildId: {
+        allowNull: false,
+        type: Sequelize.INTEGER,
+        onDelete: 'CASCADE',
+        references: {model: 'Guilds', key: 'id'},
+      },
       discordUserId: {
         type: Sequelize.STRING,
       },

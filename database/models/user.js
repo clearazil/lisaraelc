@@ -19,9 +19,11 @@ module.exports = (sequelize, DataTypes) => {
       User.belongsToMany(models.PlayTime, {through: 'PlayTimeUsers'});
       User.hasMany(models.UserGameSetting);
       User.hasOne(models.UserSetting);
+      User.hasOne(models.Guild);
     }
   };
   User.init({
+    guildId: DataTypes.INTEGER,
     discordUserId: DataTypes.STRING,
     name: DataTypes.STRING,
   }, {

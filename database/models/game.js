@@ -16,6 +16,7 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       Game.hasMany(models.GameAlias, {onDelete: 'CASCADE'});
       Game.hasMany(models.UserGameSetting, {onDelete: 'CASCADE'});
+      Game.hasOne(models.Guild);
     }
 
     /**
@@ -27,6 +28,7 @@ module.exports = (sequelize, DataTypes) => {
     }
   };
   Game.init({
+    guildId: DataTypes.INTEGER,
     name: DataTypes.STRING,
     discordRoleId: DataTypes.STRING,
     discordMessageId: DataTypes.STRING,

@@ -14,10 +14,11 @@ module.exports = (sequelize, DataTypes) => {
      * @param {unknown} models
      */
     static associate(models) {
-      // define association here
+      BotMessages.hasOne(models.guild);
     }
   };
   BotMessages.init({
+    guildId: DataTypes.INTEGER,
     messageId: DataTypes.STRING,
     name: DataTypes.STRING,
   }, {

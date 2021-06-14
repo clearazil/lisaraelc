@@ -156,6 +156,7 @@ class Discord {
     const options = {};
     options['where'] = {
       discordUserId: discordUser.id,
+      guildId: this._guildId,
     };
 
     if (include !== null) {
@@ -168,6 +169,7 @@ class Discord {
       userModel = await Database.create(db.User, {
         discordUserId: discordUser.id,
         name: discordUser.username,
+        guildId: this._guildId,
       });
 
       userModel = await Database.find(db.User, options);

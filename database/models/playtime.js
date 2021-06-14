@@ -15,9 +15,11 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       PlayTime.belongsToMany(models.User, {through: 'PlayTimeUser'});
+      PlayTime.hasOne(models.Guild);
     }
   };
   PlayTime.init({
+    guildId: DataTypes.INTEGER,
     name: DataTypes.STRING,
     emoji: DataTypes.STRING,
     timeStart: DataTypes.TIME,
