@@ -27,8 +27,9 @@ class TimeZone {
 
   /**
    * @param {Message} message
+   * @param {db.Guild} dbGuild
    */
-  async timeZone(message) {
+  async timeZone(message, dbGuild) {
     let timeZoneInput = message.content.replace(this.commands.get('timeZone').command, '').trim();
     timeZoneInput = timeZoneInput.replace(' ', '_');
 
@@ -57,7 +58,7 @@ class TimeZone {
       return;
     }
 
-    const user = await Discord.databaseUser(message.author, db.UserSetting);
+    const user = await Discord.databaseUser(message.author, dbGuild, db.UserSetting);
 
     if (user.UserSetting !== null) {
       user.UserSetting.timeZone = timeZone;

@@ -31,8 +31,11 @@ class PlayTimesMessage extends DiscordMessage {
   /**
    * Submit the time periods message to the
    * roles channel if it has not been sent yet
+   * @param {db.Guild} dbGuild
    */
-  async send() {
+  async send(dbGuild) {
+    this._dbGuild = dbGuild;
+
     if (!await this.exists()) {
       const rolesChannel = Discord.rolesChannel;
 

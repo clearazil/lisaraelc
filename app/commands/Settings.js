@@ -28,9 +28,10 @@ class Settings {
 
   /**
    * @param {Object} message
+   * @param {db.Guild} dbGuild
    */
-  async settings(message) {
-    const user = await Discord.databaseUser(message.author, [
+  async settings(message, dbGuild) {
+    const user = await Discord.databaseUser(message.author, dbGuild, [
       {
         model: db.PlayTime,
       },

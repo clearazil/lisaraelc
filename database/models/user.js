@@ -19,7 +19,7 @@ module.exports = (sequelize, DataTypes) => {
       User.belongsToMany(models.PlayTime, {through: 'PlayTimeUsers'});
       User.hasMany(models.UserGameSetting);
       User.hasOne(models.UserSetting);
-      User.hasOne(models.Guild);
+      User.belongsTo(models.Guild);
     }
   };
   User.init({

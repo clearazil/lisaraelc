@@ -25,8 +25,6 @@ class Discord {
     this._client = new DiscordJs.Client();
     this._client.login(config.token);
 
-    this._guild = null;
-
     this._client.once('ready', async () => {
       let dbGuild;
 
@@ -65,17 +63,6 @@ class Discord {
   }
 
   /**
-   * @return {Guild}
-   */
-  async fetchGuild() {
-    if (this._guild === null) {
-      this._guild = await this.client.guilds.fetch(this.config.serverId);
-    }
-
-    return this._guild;
-  }
-
-  /**
    * @param {string} name
    * @return {Channel}
    */
@@ -90,10 +77,12 @@ class Discord {
     const commands = commandClass.commands;
 
     this.client.on('message', async (message) => {
+      const dbGuild = await this.databaseGuild(message.channel.guild);
+
       try {
         for (const [key, commandMap] of commands) {
-          if (await this.runCommand(message, commandMap, key)) {
-            await commandClass[key](message);
+          if (await this.runCommand(message, dbGuild, commandMap, key)) {
+            await commandClass[key](message, dbGuild);
           }
         }
       } catch (error) {
@@ -106,19 +95,20 @@ class Discord {
   /**
    *
    * @param {Object} message
+   * @param {db.Guild} dbGuild
    * @param {Map} commandMap
    * @param {string} commandName
    * @return {bool}
    */
-  async runCommand(message, commandMap, commandName) {
-    const guild = await this.fetchGuild();
+  async runCommand(message, dbGuild, commandMap, commandName) {
+    const guild = message.channel.guild;
     const member = guild.member(message.author.id);
 
     if (message.author.bot) {
       return false;
     }
 
-    if (commandName === 'lfg' && message.channel.id !== this.config.channels.gamingLfg) {
+    if (commandName === 'lfg' && message.channel.id !== dbGuild.playingChannelId) {
       return false;
     }
 
@@ -126,7 +116,7 @@ class Discord {
       return false;
     }
 
-    if (commandMap.moderatorOnly && !member.roles.cache.has(this.config.moderatorRoleId)) {
+    if (commandMap.moderatorOnly && !member.roles.cache.has(dbGuild.moderatorRoleId)) {
       message.channel.send(`${message.author} Sorry, you do not have access to that command.`);
       return false;
     }
@@ -199,13 +189,17 @@ class Discord {
       throw new Error('discordGuild is undefined');
     }
 
-    console.log(discordGuild, discordGuild.id);
-
-    return await Database.find(db.Guild, {
+    const guild = await Database.find(db.Guild, {
       where: {
         discordGuildId: discordGuild.id,
       },
     });
+
+    if (guild === null) {
+      throw new Error(`Could not find a guild in the database for id ${discordGuild.id}`);
+    }
+
+    return guild;
   }
 }
 

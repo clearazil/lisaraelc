@@ -6,7 +6,7 @@ module.exports = {
   up: async (queryInterface, Sequelize) => {
     await queryInterface.bulkInsert('Guilds', [
       {
-        discordGuildId: config.discord.guildId,
+        discordGuildId: config.discord.serverId,
         name: config.discord.serverName,
         moderatorRoleId: config.discord.moderatorRoleId,
         settingsChannelId: config.discord.channels.roles,

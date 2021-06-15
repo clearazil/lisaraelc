@@ -31,34 +31,36 @@ class ListCommands {
 
   /**
    * @param {Object} message
+   * @param {db.Guild} dbGuild
    */
-  async commandsList(message) {
+  async commandsList(message, dbGuild) {
     let messageReply = '';
 
     for (const commandClass of this._commandClasses) {
       for (const [, commandMap] of commandClass.commands) {
-        if (commandMap.description !== undefined && await this.hasCommandAccess(message.author, commandMap)) {
+        if (commandMap.description !== undefined && await this.hasCommandAccess(message, commandMap, dbGuild)) {
           messageReply += `${commandMap.description}\n`;
         }
       }
     }
 
-    await Discord.fetchChannel(Discord.config.channels.bot)
+    await Discord.fetchChannel(dbGuild.botChannelId)
         .send(messageReply);
   }
 
   /**
    *
-   * @param {Object} discordUser
+   * @param {Message} message
    * @param {Map} command
+   * @param {db.Guild} dbGuild
    * @return {bool}
    */
-  async hasCommandAccess(discordUser, command) {
-    const guild = await Discord.fetchGuild();
-    const member = guild.member(discordUser.id);
+  async hasCommandAccess(message, command, dbGuild) {
+    const guild = message.channel.guild;
+    const member = guild.member(message.author.id);
 
     if (command.moderatorOnly) {
-      return await member.roles.cache.has(Discord.config.moderatorRoleId);
+      return await member.roles.cache.has(dbGuild.moderatorRoleId);
     }
 
     return true;

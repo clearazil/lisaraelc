@@ -64,16 +64,21 @@ class LFG {
   /**
    * @param {object} game
    * @param {object} members
+   * @param {db.Guild} dbGuild
    */
-  async addOrRemoveRoles(game, members) {
+  async addOrRemoveRoles(game, members, dbGuild) {
     let member;
 
-    const users = await Database.findAll(db.User);
+    const users = await Database.findAll(db.User, {
+      where: {
+        guildId: dbGuild.id,
+      },
+    });
 
     for (const user of users) {
       member = members.get(user.discordUserId);
 
-      const notifyUser = await this.notifyAtThisTime(game.id, user.id);
+      const notifyUser = await this.notifyAtThisTime(game.id, user.id, dbGuild.id);
       const hasRole = member.roles.cache.has(game.discordRoleId);
       if (notifyUser && !hasRole) {
         await member.roles.add(game.discordRoleId);
@@ -87,8 +92,9 @@ class LFG {
 
   /**
    * @param {Message} message
+   * @param {db.Guild} dbGuild
    */
-  async lfg(message) {
+  async lfg(message, dbGuild) {
     this._foundRolesInMessage = false;
     let messageReply = message.content;
 
@@ -97,9 +103,12 @@ class LFG {
       order: [
         ['name', 'DESC'],
       ],
+      where: {
+        guildId: dbGuild.id,
+      },
     });
 
-    const guild = await Discord.fetchGuild();
+    const guild = message.channel.guild;
 
     const allMembers = await guild.members.fetch();
 
@@ -110,7 +119,7 @@ class LFG {
 
       if (this._foundRole) {
         this._foundRolesInMessage = true;
-        await this.addOrRemoveRoles(gameRole, allMembers);
+        await this.addOrRemoveRoles(gameRole, allMembers, dbGuild);
       }
     }
 
@@ -122,11 +131,12 @@ class LFG {
   }
 
   /**
-   * @param {string} gameId
-   * @param {string} userId
+   * @param {int} gameId
+   * @param {int} userId
+   * @param {int} guildId
    * @return {bool}
    */
-  async notifyAtThisTime(gameId, userId) {
+  async notifyAtThisTime(gameId, userId, guildId) {
     let notifyAllGames = false;
     let notifyForGame = false;
 
@@ -141,6 +151,7 @@ class LFG {
       ],
       where: {
         id: userId,
+        guildId,
       },
     });
 

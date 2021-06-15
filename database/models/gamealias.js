@@ -18,6 +18,7 @@ module.exports = (sequelize, DataTypes) => {
     }
   };
   GameAlias.init({
+    guildId: DataTypes.INTEGER,
     gameId: DataTypes.INTEGER,
     name: DataTypes.STRING,
   }, {

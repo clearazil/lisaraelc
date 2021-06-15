@@ -53,8 +53,9 @@ class Game {
 
   /**
    * @param {Message} message
+   * @param {db.Guild} dbGuild
    */
-  async add(message) {
+  async add(message, dbGuild) {
     const roleName = message.content.replace(this.commands.get('add').command, '').trim();
 
     if (!(roleName.length > 0)) {
@@ -62,10 +63,11 @@ class Game {
       return;
     }
 
-    const guild = await Discord.fetchGuild();
+    const guild = message.channel.guild;
 
     const exists = await Database.find(db.Game, {
       where: {
+        guildId: dbGuild.id,
         name: roleName,
       },
     }) !== null;
@@ -80,13 +82,14 @@ class Game {
         },
       });
 
-      const gamesChannel = Discord.fetchChannel(Discord.config.channels.games);
+      const gamesChannel = Discord.fetchChannel(dbGuild.gamesChannelId);
 
       const channelMessage = await gamesChannel.send(roleName);
       channelMessage.react(Discord.config.emojis.positive);
       channelMessage.react(Discord.config.emojis.negative);
 
       await Database.create(db.Game, {
+        guildId: dbGuild.id,
         name: roleName,
         discordRoleId: role.id,
         discordMessageId: channelMessage.id,
@@ -98,8 +101,9 @@ class Game {
 
   /**
    * @param {Message} message
+   * @param {db.Guild} dbGuild
    */
-  async remove(message) {
+  async remove(message, dbGuild) {
     const roleName = message.content.replace(this.commands.get('remove').command, '').trim();
 
     if (!(roleName.length > 0)) {
@@ -107,11 +111,11 @@ class Game {
       return;
     }
 
-    const guild = await Discord.fetchGuild();
-
+    const guild = message.channel.guild;
 
     const game = await Database.find(db.Game, {
       where: {
+        guildId: dbGuild.id,
         name: roleName,
       },
     });
@@ -125,6 +129,7 @@ class Game {
 
       await db.Game.destroy({
         where: {
+          guildId: dbGuild.id,
           name: roleName,
         },
       });
@@ -137,8 +142,9 @@ class Game {
 
   /**
    * @param {Message} message
+   * @param {db.Guild} dbGuild
    */
-  async addAlias(message) {
+  async addAlias(message, dbGuild) {
     const params = message.content.replace(this.commands.get('addAlias').command, '').trim();
 
     const firstArg = new RegExp(/(?<=\`)(.*?)(?=\`)/, 'i');
@@ -160,6 +166,7 @@ class Game {
 
     dbGame = await Database.find(db.Game, {
       where: {
+        guildId: dbGuild.id,
         name: game,
       },
     });
@@ -172,6 +179,7 @@ class Game {
     dbAlias = await Database.find(db.GameAlias, {
       include: {all: true},
       where: {
+        guildId: dbGuild.id,
         name: alias,
       },
     });
@@ -182,6 +190,7 @@ class Game {
     }
 
     await Database.create(db.GameAlias, {
+      guildId: dbGuild.id,
       gameId: dbGame.id,
       name: alias,
     });
@@ -191,8 +200,9 @@ class Game {
 
   /**
    * @param {Message} message
+   * @param {db.Guild} dbGuild
    */
-  async removeAlias(message) {
+  async removeAlias(message, dbGuild) {
     const aliasName = message.content.replace(this.commands.get('removeAlias').command, '').trim();
 
     if (!(aliasName.length > 0)) {
@@ -203,6 +213,7 @@ class Game {
     const alias = await Database.find(db.GameAlias, {
       include: {all: true},
       where: {
+        guildId: dbGuild.id,
         name: aliasName,
       },
     });
@@ -214,6 +225,7 @@ class Game {
 
     db.GameAlias.destroy({
       where: {
+        guildId: dbGuild.id,
         name: aliasName,
       },
     });
@@ -223,8 +235,9 @@ class Game {
 
   /**
    * @param {Message} message
+   * @param {db.Guild} dbGuild
    */
-  async aliases(message) {
+  async aliases(message, dbGuild) {
     const roleName = message.content.replace(this.commands.get('aliases').command, '').trim();
 
     if (!(roleName.length > 0)) {
@@ -235,6 +248,7 @@ class Game {
     const game = await Database.find(db.Game, {
       include: {all: true},
       where: {
+        guildId: dbGuild.id,
         name: roleName,
       },
     });
