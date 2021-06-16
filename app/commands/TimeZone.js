@@ -15,6 +15,7 @@ class TimeZone {
     const commands = new Map();
 
     commands.set('timeZone', {
+      method: 'timeZone',
       command: '!timeZone',
       moderatorOnly: false,
       get description() {

@@ -42,8 +42,35 @@ class Discord {
       const listCommands = new ListCommands(commandClasses);
       commandClasses.push(listCommands);
 
-      commandClasses.forEach((className) => {
-        this.addCommands(className);
+      const commands = {};
+
+      for (const className of commandClasses) {
+        for (const [, commandMap] of className.commands) {
+          commands[commandMap.command] = {
+            map: commandMap,
+            className: className,
+          };
+        }
+      }
+
+      this.client.on('message', async (message) => {
+        try {
+          const command = message.content.split(' ')[0];
+
+          if (commands[command] !== undefined) {
+            const map = commands[command].map;
+            const className = commands[command].className;
+            const method = map.method;
+
+            const dbGuild = await this.databaseGuild(message.channel.guild);
+            if (await this.runCommand(message, dbGuild, map, method)) {
+              await className[method](message, dbGuild);
+            }
+          }
+        } catch (error) {
+          message.channel.send(`${message.author} Sorry, an error occured while running this command.`);
+          console.error(error);
+        }
       });
     });
   }
@@ -68,28 +95,6 @@ class Discord {
    */
   fetchChannel(name) {
     return this.client.channels.cache.get(name);
-  }
-
-  /**
-   * @param {Object} commandClass
-   */
-  addCommands(commandClass) {
-    const commands = commandClass.commands;
-
-    this.client.on('message', async (message) => {
-      const dbGuild = await this.databaseGuild(message.channel.guild);
-
-      try {
-        for (const [key, commandMap] of commands) {
-          if (await this.runCommand(message, dbGuild, commandMap, key)) {
-            await commandClass[key](message, dbGuild);
-          }
-        }
-      } catch (error) {
-        message.channel.send(`${message.author} Sorry, an error occured while running this command.`);
-        console.error(error);
-      }
-    });
   }
 
   /**

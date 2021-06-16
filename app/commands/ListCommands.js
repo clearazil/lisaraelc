@@ -19,6 +19,7 @@ class ListCommands {
     const commands = new Map();
 
     commands.set('commandsList', {
+      method: 'commandsList',
       command: '!commands',
       moderatorOnly: false,
       get description() {

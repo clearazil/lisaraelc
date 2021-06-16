@@ -16,6 +16,7 @@ class Settings {
     const commands = new Map();
 
     commands.set('settings', {
+      method: 'settings',
       command: '!settings',
       moderatorOnly: false,
       get description() {

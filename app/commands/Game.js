@@ -13,6 +13,7 @@ class Game {
     const commands = new Map();
 
     commands.set('add', {
+      method: 'add',
       command: '!addGame',
       moderatorOnly: true,
       get description() {
@@ -20,6 +21,7 @@ class Game {
       },
     });
     commands.set('remove', {
+      method: 'remove',
       command: '!removeGame',
       moderatorOnly: true,
       get description() {
@@ -27,6 +29,7 @@ class Game {
       },
     });
     commands.set('addAlias', {
+      method: 'addAlias',
       command: '!addAlias',
       moderatorOnly: true,
       get description() {
@@ -34,6 +37,7 @@ class Game {
       },
     });
     commands.set('removeAlias', {
+      method: 'removeAlias',
       command: '!removeAlias',
       moderatorOnly: true,
       get description() {
@@ -41,6 +45,7 @@ class Game {
       },
     });
     commands.set('aliases', {
+      method: 'aliases',
       command: '!aliases',
       moderatorOnly: false,
       get description() {

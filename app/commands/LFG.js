@@ -24,6 +24,7 @@ class LFG {
     const commands = new Map();
 
     commands.set('lfg', {
+      method: 'lfg',
       command: '!lfg',
       moderatorOnly: false,
     });
