@@ -27,6 +27,8 @@ class LFG {
       method: 'lfg',
       command: '!lfg',
       moderatorOnly: false,
+      adminOnly: false,
+      needsSetupFinished: true,
     });
 
     return commands;
@@ -126,7 +128,7 @@ class LFG {
 
     if (this._foundRolesInMessage) {
       await message.delete();
-      await Discord.fetchChannel(Discord.config.channels.gamingLfg)
+      await Discord.fetchChannel(dbGuild.playingChannelId)
           .send(`${message.author.username} : ${messageReply}`);
     }
   }

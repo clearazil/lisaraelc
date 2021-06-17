@@ -11,6 +11,7 @@ import TimeZone from '../commands/TimeZone.js';
 import ListCommands from '../commands/ListCommands.js';
 import Settings from '../commands/Settings.js';
 import NotifyAnyGameMessage from './NotifyAnyGameMessage.js';
+import Setup from '../commands/Setup';
 
 const db = require('../../database/models');
 
@@ -31,14 +32,12 @@ class Discord {
       for (const guild of this._client.guilds.cache.values()) {
         dbGuild = await this.databaseGuild(guild);
 
-        await PlayTimesMessage.send(dbGuild);
-        await NotifyAnyGameMessage.send(dbGuild);
-        PlayTimesMessage.awaitReactions(dbGuild);
-        GameMessage.awaitReactions(dbGuild);
-        NotifyAnyGameMessage.awaitReactions(dbGuild);
+        if (this.isSetupFinished(dbGuild)) {
+          this.initBot(dbGuild);
+        }
       }
 
-      const commandClasses = [LFG, Game, TimeZone, Settings];
+      const commandClasses = [LFG, Game, TimeZone, Settings, Setup];
       const listCommands = new ListCommands(commandClasses);
       commandClasses.push(listCommands);
 
@@ -55,6 +54,12 @@ class Discord {
 
       this.client.on('message', async (message) => {
         try {
+          const dbGuild = await this.databaseGuild(message.channel.guild);
+
+          if (this.isSetupFinished(dbGuild) && message.channel.id === dbGuild.playingChannelId) {
+            await LFG.lfg(message, dbGuild);
+          }
+
           const command = message.content.split(' ')[0];
 
           if (commands[command] !== undefined) {
@@ -62,7 +67,6 @@ class Discord {
             const className = commands[command].className;
             const method = map.method;
 
-            const dbGuild = await this.databaseGuild(message.channel.guild);
             if (await this.runCommand(message, dbGuild, map, method)) {
               await className[method](message, dbGuild);
             }
@@ -90,6 +94,49 @@ class Discord {
   }
 
   /**
+   *
+   * @param {db.Guild} dbGuild
+   */
+  async initBot(dbGuild) {
+    debugger;
+    await PlayTimesMessage.send(dbGuild);
+    await NotifyAnyGameMessage.send(dbGuild);
+    PlayTimesMessage.awaitReactions(dbGuild);
+    GameMessage.awaitReactions(dbGuild);
+    NotifyAnyGameMessage.awaitReactions(dbGuild);
+  }
+
+  /**
+   *
+   * @param {db.Guild} dbGuild
+   * @return {bool}
+   */
+  isSetupFinished(dbGuild) {
+    if (dbGuild === null) {
+      return false;
+    }
+
+    const fields = [
+      'discordGuildId',
+      'name',
+      'moderatorRoleId',
+      'playingChannelId',
+      'settingsChannelId',
+      'gamesChannelId',
+      'botChannelId',
+    ];
+
+    for (const field of fields) {
+      if (dbGuild[field] === null || dbGuild[field] === undefined) {
+        return false;
+      }
+    }
+    debugger;
+
+    return true;
+  }
+
+  /**
    * @param {string} name
    * @return {Channel}
    */
@@ -113,34 +160,32 @@ class Discord {
       return false;
     }
 
-    if (commandName === 'lfg' && message.channel.id !== dbGuild.playingChannelId) {
+    if (!message.content.startsWith(commandMap.command)) {
       return false;
     }
 
-    if (commandName !== 'lfg' && !message.content.startsWith(commandMap.command)) {
+    // allow commands anywhere if setup isn't finished
+    if (this.isSetupFinished(dbGuild) && message.channel.id !== dbGuild.botChannelId) {
       return false;
     }
 
-    if (commandMap.moderatorOnly && !member.roles.cache.has(dbGuild.moderatorRoleId)) {
+    if (!this.isSetupFinished(dbGuild) && commandMap.needsSetupFinished) {
+      // eslint-disable-next-line max-len
+      message.channel.send(`${message.author} Sorry, an admin will have to run !setup before this command can be used.`);
+      return false;
+    }
+
+    if (commandMap.adminOnly && !member.permissions.has('ADMINISTRATOR')) {
+      message.channel.send(`${message.author} Sorry, you do not have access to that command.`);
+      return false;
+    }
+
+    if (this.isSetupFinished(dbGuild) && commandMap.moderatorOnly && !member.roles.cache.has(dbGuild.moderatorRoleId)) {
       message.channel.send(`${message.author} Sorry, you do not have access to that command.`);
       return false;
     }
 
     return true;
-  }
-
-  /**
-   * @return {Channel}
-   */
-  get rolesChannel() {
-    return this.fetchChannel(this.config.channels.roles);
-  }
-
-  /**
-   * @return {Channel}
-   */
-  get gamesChannel() {
-    return this.fetchChannel(this.config.channels.games);
   }
 
   /**
@@ -194,17 +239,71 @@ class Discord {
       throw new Error('discordGuild is undefined');
     }
 
-    const guild = await Database.find(db.Guild, {
+    let guild = await Database.find(db.Guild, {
       where: {
         discordGuildId: discordGuild.id,
       },
     });
 
     if (guild === null) {
-      throw new Error(`Could not find a guild in the database for id ${discordGuild.id}`);
+      guild = await Database.create(db.Guild, {
+        discordGuildId: discordGuild.id,
+        name: discordGuild.name,
+      });
+
+      await this.seedPlayTimes(guild);
     }
 
     return guild;
+  }
+
+  /**
+   *
+   * @param {db.Guild} dbGuild
+   */
+  async seedPlayTimes(dbGuild) {
+    const playTimes = [];
+
+    playTimes.push(
+        {
+          guildId: dbGuild.id,
+          name: 'morning',
+          emoji: '1️⃣',
+          timeStart: '08:00:00',
+          timeEnd: '11:59:59',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        {
+          guildId: dbGuild.id,
+          name: 'afternoon',
+          emoji: '2️⃣',
+          timeStart: '12:00:00',
+          timeEnd: '17:59:59',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        {
+          guildId: dbGuild.id,
+          name: 'evening',
+          emoji: '3️⃣',
+          timeStart: '18:00:00',
+          timeEnd: '23:59:59',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        {
+          guildId: dbGuild.id,
+          name: 'night',
+          emoji: '4️⃣',
+          timeStart: '00:00:00',
+          timeEnd: '07:59:59',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+    );
+
+    await db.PlayTime.bulkCreate(playTimes);
   }
 }
 

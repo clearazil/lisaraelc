@@ -28,6 +28,16 @@ class Helper {
 
     return dateTime;
   }
+
+  /**
+   * Capitalize the first character
+   * in a string
+   * @param {string} string
+   * @return {string}
+   */
+  ucfirst(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
+  }
 }
 
 export default new Helper;

@@ -16,6 +16,8 @@ class Game {
       method: 'add',
       command: '!addGame',
       moderatorOnly: true,
+      adminOnly: false,
+      needsSetupFinished: true,
       get description() {
         return `\`\`${this.command} <game name>\`\` add a game.`;
       },
@@ -24,6 +26,8 @@ class Game {
       method: 'remove',
       command: '!removeGame',
       moderatorOnly: true,
+      adminOnly: false,
+      needsSetupFinished: true,
       get description() {
         return `\`\`${this.command} <game name>\`\` remove a game.`;
       },
@@ -32,6 +36,8 @@ class Game {
       method: 'addAlias',
       command: '!addAlias',
       moderatorOnly: true,
+      adminOnly: false,
+      needsSetupFinished: true,
       get description() {
         return `\`\`${this.command} \`<game name>\` <alias name>\`\` add an alias to a game.`;
       },
@@ -40,6 +46,8 @@ class Game {
       method: 'removeAlias',
       command: '!removeAlias',
       moderatorOnly: true,
+      adminOnly: false,
+      needsSetupFinished: true,
       get description() {
         return `\`\`${this.command} <alias name>\`\` remove an alias.`;
       },
@@ -48,6 +56,8 @@ class Game {
       method: 'aliases',
       command: '!aliases',
       moderatorOnly: false,
+      adminOnly: false,
+      needsSetupFinished: true,
       get description() {
         return `\`\`${this.command} <game name>\`\` lists the available aliases for a game.`;
       },
@@ -127,10 +137,19 @@ class Game {
 
     if (game !== null) {
       const role = await guild.roles.fetch(game.discordRoleId);
-      await role.delete();
 
-      const gameMessage = await Discord.gamesChannel.messages.fetch(game.discordMessageId);
-      await gameMessage.delete();
+      if (role !== null) {
+        await role.delete();
+      }
+
+      const gamesChannel = Discord.fetchChannel(dbGuild.gamesChannelId);
+
+      try {
+        const gameMessage = await gamesChannel.messages.fetch(game.discordMessageId);
+        await gameMessage.delete();
+      } catch (error) {
+        console.error(error);
+      }
 
       await db.Game.destroy({
         where: {

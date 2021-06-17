@@ -1,6 +1,4 @@
 
-import Discord from '../components/Discord';
-
 /**
  *
  */
@@ -22,6 +20,8 @@ class ListCommands {
       method: 'commandsList',
       command: '!commands',
       moderatorOnly: false,
+      adminOnly: false,
+      needsSetupFinished: false,
       get description() {
         return `\`\`${this.command}\`\` lists all available commands.`;
       },
@@ -45,8 +45,7 @@ class ListCommands {
       }
     }
 
-    await Discord.fetchChannel(dbGuild.botChannelId)
-        .send(messageReply);
+    await message.channel.send(messageReply);
   }
 
   /**

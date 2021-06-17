@@ -19,6 +19,8 @@ class Settings {
       method: 'settings',
       command: '!settings',
       moderatorOnly: false,
+      adminOnly: false,
+      needsSetupFinished: true,
       get description() {
         return `\`\`${this.command}\`\` shows your personal settings.`;
       },

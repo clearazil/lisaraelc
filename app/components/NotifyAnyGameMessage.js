@@ -37,7 +37,7 @@ class PlayTimesMessage extends DiscordMessage {
     this._dbGuild = dbGuild;
 
     if (!await this.exists()) {
-      const rolesChannel = Discord.rolesChannel;
+      const rolesChannel = Discord.fetchChannel(dbGuild.settingsChannelId);
 
       const message = 'Notify me for all games:';
 

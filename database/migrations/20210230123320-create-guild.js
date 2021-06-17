@@ -9,10 +9,12 @@ module.exports = {
         type: Sequelize.INTEGER,
       },
       discordGuildId: {
+        allowNull: false,
         type: Sequelize.STRING,
         unique: true,
       },
       name: {
+        allowNull: false,
         type: Sequelize.STRING,
       },
       moderatorRoleId: {

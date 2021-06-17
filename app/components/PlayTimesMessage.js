@@ -2,6 +2,7 @@
 import Discord from './Discord';
 import Database from '../core/Database';
 import DiscordMessage from './DiscordMessage';
+import Helper from '../core/Helper';
 const db = require('../../database/models');
 
 /**
@@ -37,14 +38,18 @@ class PlayTimesMessage extends DiscordMessage {
     this._dbGuild = dbGuild;
 
     if (!await this.exists()) {
-      const rolesChannel = Discord.rolesChannel;
+      const rolesChannel = Discord.fetchChannel(dbGuild.settingsChannelId);
 
       let message = 'React with the emoji\'s below to set the time periods you want to be notified:\n\n';
 
-      const playTimes = await Database.findAll(db.PlayTime);
+      const playTimes = await Database.findAll(db.PlayTime, {
+        where: {
+          guildId: dbGuild.id,
+        },
+      });
 
       playTimes.forEach((playTime) => {
-        message += `${playTime.emoji} ${this.ucfirst(playTime.name)} ${playTime.timeStart} - ${playTime.timeEnd}\n`;
+        message += `${playTime.emoji} ${Helper.ucfirst(playTime.name)} ${playTime.timeStart} - ${playTime.timeEnd}\n`;
       });
 
       const discordMessage = await rolesChannel.send(message);
@@ -63,8 +68,6 @@ class PlayTimesMessage extends DiscordMessage {
   async awaitReactions(dbGuild) {
     this._dbGuild = dbGuild;
 
-    const message = await this.get();
-
     const playTimes = await Database.findAll(db.PlayTime, {
       where: {
         guildId: dbGuild.id,
@@ -77,9 +80,11 @@ class PlayTimesMessage extends DiscordMessage {
     });
 
     Discord.client.on('raw', async (packet) => {
-      if (['MESSAGE_REACTION_ADD', 'MESSAGE_REACTION_REMOVE'].includes(packet.t)) {
+      if (['MESSAGE_REACTION_ADD', 'MESSAGE_REACTION_REMOVE'].includes(packet.t) &&
+      packet.d.guild_id === dbGuild.discordGuildId) {
+        const message = await this.get();
         const channel = Discord.client.channels.cache.get(packet.d.channel_id);
-        const reactionMessage = channel.messages.cache.get(packet.d.message_id);
+        const reactionMessage = await channel.messages.fetch(packet.d.message_id);
 
         // Emojis can have identifiers of name:id format, so we have to account for that
         const emoji = packet.d.emoji.id ? `${packet.d.emoji.name}:${packet.d.emoji.id}` : packet.d.emoji.name;
@@ -140,17 +145,6 @@ class PlayTimesMessage extends DiscordMessage {
         UserId: userModel.id,
       },
     });
-  }
-
-  /**
-   * Capitalize the first character
-   * in a string
-   * TODO: move to a helper class
-   * @param {string} string
-   * @return {string}
-   */
-  ucfirst(string) {
-    return string.charAt(0).toUpperCase() + string.slice(1);
   }
 }
 

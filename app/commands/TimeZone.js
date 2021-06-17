@@ -18,6 +18,8 @@ class TimeZone {
       method: 'timeZone',
       command: '!timeZone',
       moderatorOnly: false,
+      adminOnly: false,
+      needsSetupFinished: true,
       get description() {
         return `\`\`${this.command} <time zone name>\`\` sets your time zone.`;
       },
