@@ -20,7 +20,6 @@ class DiscordMessage {
    * @return {Message}
    */
   async get() {
-    this._message = null;
     if (this._message === null) {
       const dbMessage = await this.find();
 
