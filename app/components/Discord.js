@@ -33,7 +33,12 @@ class Discord {
         dbGuild = await this.databaseGuild(guild);
 
         if (this.isSetupFinished(dbGuild)) {
-          this.initBot(dbGuild);
+          try {
+            await this.initBot(dbGuild);
+          } catch (error) {
+            console.error(error);
+            console.log('Error while initialising bot, guild info: ' + JSON.stringify(dbGuild));
+          }
         }
       }
 
@@ -72,6 +77,7 @@ class Discord {
             }
           }
         } catch (error) {
+          console.log('Error occured while trying to run a command');
           message.channel.send(`${message.author} Sorry, an error occured while running this command.`);
           console.error(error);
         }
@@ -98,12 +104,40 @@ class Discord {
    * @param {db.Guild} dbGuild
    */
   async initBot(dbGuild) {
-    debugger;
-    await PlayTimesMessage.send(dbGuild);
-    await NotifyAnyGameMessage.send(dbGuild);
-    PlayTimesMessage.awaitReactions(dbGuild);
-    GameMessage.awaitReactions(dbGuild);
-    NotifyAnyGameMessage.awaitReactions(dbGuild);
+    try {
+      await PlayTimesMessage.send(dbGuild);
+    } catch (error) {
+      console.error(error);
+      console.log('Error sending play times message');
+    }
+
+    try {
+      await NotifyAnyGameMessage.send(dbGuild);
+    } catch (error) {
+      console.error(error);
+      console.log('Error sending notify any games message');
+    }
+
+    try {
+      PlayTimesMessage.awaitReactions(dbGuild);
+    } catch (error) {
+      console.error(error);
+      console.log('Error awaiting reactions for play times message.');
+    }
+
+    try {
+      GameMessage.awaitReactions(dbGuild);
+    } catch (error) {
+      console.error(error);
+      console.log('Error awaiting reactions for game message.');
+    }
+
+    try {
+      NotifyAnyGameMessage.awaitReactions(dbGuild);
+    } catch (error) {
+      console.error(error);
+      console.log('Error awaiting reactions for notify any games message');
+    }
   }
 
   /**
@@ -131,7 +165,6 @@ class Discord {
         return false;
       }
     }
-    debugger;
 
     return true;
   }

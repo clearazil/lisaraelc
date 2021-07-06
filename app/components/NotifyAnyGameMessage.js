@@ -53,6 +53,7 @@ class PlayTimesMessage extends DiscordMessage {
    * @param {db.Guild} dbGuild
    */
   async awaitReactions(dbGuild) {
+    this._dbGuild = dbGuild;
     const message = await this.get();
 
     Discord.client.on('raw', async (packet) => {
