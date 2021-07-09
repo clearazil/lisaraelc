@@ -1,16 +1,14 @@
 
 import config from '../../config/config.js';
 import DiscordJs from 'discord.js';
+import Guild from './Guild';
 import '../core/Database';
 import LFG from '../commands/LFG.js';
-import PlayTimesMessage from './PlayTimesMessage';
-import GameMessage from './GameMessage';
 import Game from '../commands/Game.js';
 import Database from '../core/Database';
 import TimeZone from '../commands/TimeZone.js';
 import ListCommands from '../commands/ListCommands.js';
 import Settings from '../commands/Settings.js';
-import NotifyAnyGameMessage from './NotifyAnyGameMessage.js';
 import Setup from '../commands/Setup';
 
 const db = require('../../database/models');
@@ -26,19 +24,16 @@ class Discord {
     this._client = new DiscordJs.Client();
     this._client.login(config.token);
 
+    this._guilds = new Map();
+
     this._client.once('ready', async () => {
-      let dbGuild;
+      for (const discordGuild of this._client.guilds.cache.values()) {
+        const guild = new Guild(discordGuild.id);
+        await guild.initialize();
+        this._guilds.set(discordGuild.id, guild);
 
-      for (const guild of this._client.guilds.cache.values()) {
-        dbGuild = await this.databaseGuild(guild);
-
-        if (this.isSetupFinished(dbGuild)) {
-          try {
-            await this.initBot(dbGuild);
-          } catch (error) {
-            console.error(error);
-            console.log('Error while initialising bot, guild info: ' + JSON.stringify(dbGuild));
-          }
+        if (guild.isSetupFinished()) {
+          await guild.initMessages();
         }
       }
 
@@ -58,10 +53,11 @@ class Discord {
       }
 
       this.client.on('message', async (message) => {
+        const guild = this._guilds.get(message.channel.guild.id);
         try {
-          const dbGuild = await this.databaseGuild(message.channel.guild);
+          const dbGuild = await guild.dbGuild;
 
-          if (this.isSetupFinished(dbGuild) && message.channel.id === dbGuild.playingChannelId) {
+          if (guild.isSetupFinished() && message.channel.id === dbGuild.playingChannelId) {
             await LFG.lfg(message, dbGuild);
           }
 
@@ -72,7 +68,7 @@ class Discord {
             const className = commands[command].className;
             const method = map.method;
 
-            if (await this.runCommand(message, dbGuild, map, method)) {
+            if (await this.runCommand(message, map)) {
               await className[method](message, dbGuild);
             }
           }
@@ -100,76 +96,6 @@ class Discord {
   }
 
   /**
-   *
-   * @param {db.Guild} dbGuild
-   */
-  async initBot(dbGuild) {
-    try {
-      await PlayTimesMessage.send(dbGuild);
-    } catch (error) {
-      console.error(error);
-      console.log('Error sending play times message');
-    }
-
-    try {
-      await NotifyAnyGameMessage.send(dbGuild);
-    } catch (error) {
-      console.error(error);
-      console.log('Error sending notify any games message');
-    }
-
-    try {
-      PlayTimesMessage.awaitReactions(dbGuild);
-    } catch (error) {
-      console.error(error);
-      console.log('Error awaiting reactions for play times message.');
-    }
-
-    try {
-      GameMessage.awaitReactions(dbGuild);
-    } catch (error) {
-      console.error(error);
-      console.log('Error awaiting reactions for game message.');
-    }
-
-    try {
-      NotifyAnyGameMessage.awaitReactions(dbGuild);
-    } catch (error) {
-      console.error(error);
-      console.log('Error awaiting reactions for notify any games message');
-    }
-  }
-
-  /**
-   *
-   * @param {db.Guild} dbGuild
-   * @return {bool}
-   */
-  isSetupFinished(dbGuild) {
-    if (dbGuild === null) {
-      return false;
-    }
-
-    const fields = [
-      'discordGuildId',
-      'name',
-      'moderatorRoleId',
-      'playingChannelId',
-      'settingsChannelId',
-      'gamesChannelId',
-      'botChannelId',
-    ];
-
-    for (const field of fields) {
-      if (dbGuild[field] === null || dbGuild[field] === undefined) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  /**
    * @param {string} name
    * @return {Channel}
    */
@@ -180,14 +106,14 @@ class Discord {
   /**
    *
    * @param {Object} message
-   * @param {db.Guild} dbGuild
    * @param {Map} commandMap
-   * @param {string} commandName
    * @return {bool}
    */
-  async runCommand(message, dbGuild, commandMap, commandName) {
-    const guild = message.channel.guild;
-    const member = guild.member(message.author.id);
+  async runCommand(message, commandMap) {
+    const discordGuild = message.channel.guild;
+    const member = discordGuild.member(message.author.id);
+    const guild = this._guilds.get(discordGuild.id);
+    const dbGuild = guild.dbGuild;
 
     if (message.author.bot) {
       return false;
@@ -198,11 +124,11 @@ class Discord {
     }
 
     // allow commands anywhere if setup isn't finished
-    if (this.isSetupFinished(dbGuild) && message.channel.id !== dbGuild.botChannelId) {
+    if (await guild.isSetupFinished() && message.channel.id !== dbGuild.botChannelId) {
       return false;
     }
 
-    if (!this.isSetupFinished(dbGuild) && commandMap.needsSetupFinished) {
+    if (!await guild.isSetupFinished() && commandMap.needsSetupFinished) {
       // eslint-disable-next-line max-len
       message.channel.send(`${message.author} Sorry, an admin will have to run !setup before this command can be used.`);
       return false;
@@ -213,7 +139,8 @@ class Discord {
       return false;
     }
 
-    if (this.isSetupFinished(dbGuild) && commandMap.moderatorOnly && !member.roles.cache.has(dbGuild.moderatorRoleId)) {
+    if (guild.isSetupFinished() && commandMap.moderatorOnly &&
+      !member.roles.cache.has(dbGuild.moderatorRoleId)) {
       message.channel.send(`${message.author} Sorry, you do not have access to that command.`);
       return false;
     }

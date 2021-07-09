@@ -149,7 +149,8 @@ class Setup {
    * @param {string} type
    */
   async setChannelOrRole(message, dbGuild, name, type) {
-    const isSetupFinishedBefore = Discord.isSetupFinished(dbGuild);
+    const guild = Discord._guilds.get(dbGuild.discordGuildId);
+    const isSetupFinishedBefore = guild.isSetupFinished();
 
     const id = message.content.replace(this.commands.get(name + Helper.ucfirst(type)).command, '').trim();
 
@@ -164,8 +165,8 @@ class Setup {
     dbGuild[name + Helper.ucfirst(type) + 'Id'] = found[0];
     await dbGuild.save();
 
-    if (!isSetupFinishedBefore && Discord.isSetupFinished(dbGuild)) {
-      Discord.initBot(dbGuild);
+    if (!isSetupFinishedBefore && guild.isSetupFinished()) {
+      await guild.initMessages();
     }
 
     let typePrefix = '';
