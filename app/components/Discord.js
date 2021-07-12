@@ -55,7 +55,7 @@ class Discord {
       this.client.on('message', async (message) => {
         const guild = this._guilds.get(message.channel.guild.id);
         try {
-          const dbGuild = await guild.dbGuild;
+          const dbGuild = guild.dbGuild;
 
           if (guild.isSetupFinished() && message.channel.id === dbGuild.playingChannelId) {
             await LFG.lfg(message, dbGuild);

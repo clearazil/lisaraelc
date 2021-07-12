@@ -7,16 +7,22 @@ const db = require('../../database/models');
  */
 class GameMessage {
   /**
-   * @param {db.Guild} dbGuild
+   *
+   * @param {Guild} guild
    */
-  async awaitReactions(dbGuild) {
-    this._dbGuild = dbGuild;
+  constructor(guild) {
+    this.guild = guild;
+  }
 
+  /**
+   *
+   */
+  async awaitReactions() {
     try {
       const positiveEmoji = Discord.config.emojis.positive;
       const negativeEmoji = Discord.config.emojis.negative;
 
-      const gamesChannel = await Discord.fetchChannel(this._dbGuild.gamesChannelId);
+      const gamesChannel = await Discord.fetchChannel(this.guild.dbGuild.gamesChannelId);
 
       Discord.client.on('raw', async (packet) => {
         if (['MESSAGE_REACTION_REMOVE', 'MESSAGE_REACTION_ADD'].includes(packet.t) &&
@@ -29,17 +35,21 @@ class GameMessage {
 
           const game = await Database.find(db.Game, {
             where: {
-              guildId: this._dbGuild.id,
+              guildId: this.guild.dbGuild.id,
               discordMessageId: packet.d.message_id,
             },
           });
 
           const reactionMessage = await gamesChannel.messages.fetch(packet.d.message_id);
 
+          if (game === null) {
+            console.error(`Couldn't find game "${reactionMessage.content}" in guild "${this.guild.dbGuild.name}".`);
+            return;
+          }
+
           // Emojis can have identifiers of name:id format, so we have to account for that
           const emoji = packet.d.emoji.id ? `${packet.d.emoji.name}:${packet.d.emoji.id}` : packet.d.emoji.name;
           const emojis = [positiveEmoji, negativeEmoji];
-
 
           let notify = false;
 
@@ -92,7 +102,7 @@ class GameMessage {
    * @param {db.Game} game
    */
   async saveUserGame(notify, user, game) {
-    const databaseUser = await Discord.databaseUser(user, this._dbGuild);
+    const databaseUser = await Discord.databaseUser(user, this.guild.dbGuild);
 
     const userGameSetting = await Database.find(db.UserGameSetting, {
       where: {
@@ -121,7 +131,7 @@ class GameMessage {
    * @param {db.Game} game
    */
   async deleteUserGame(user, game) {
-    const databaseUser = await Discord.databaseUser(user, this._dbGuild);
+    const databaseUser = await Discord.databaseUser(user, this.guild.dbGuild);
 
     await db.UserGameSetting.destroy({
       where: {
@@ -132,4 +142,4 @@ class GameMessage {
   }
 }
 
-export default new GameMessage;
+export default GameMessage;

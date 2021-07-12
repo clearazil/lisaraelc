@@ -32,19 +32,17 @@ class PlayTimesMessage extends DiscordMessage {
   /**
    * Submit the time periods message to the
    * roles channel if it has not been sent yet
-   * @param {db.Guild} dbGuild
+   *
    */
-  async send(dbGuild) {
-    this._dbGuild = dbGuild;
-
+  async send() {
     if (!await this.exists()) {
-      const rolesChannel = Discord.fetchChannel(dbGuild.settingsChannelId);
+      const rolesChannel = Discord.fetchChannel(this.guild.dbGuild.settingsChannelId);
 
       let message = 'React with the emoji\'s below to set the time periods you want to be notified:\n\n';
 
       const playTimes = await Database.findAll(db.PlayTime, {
         where: {
-          guildId: dbGuild.id,
+          guildId: this.guild.dbGuild.id,
         },
       });
 
@@ -63,14 +61,12 @@ class PlayTimesMessage extends DiscordMessage {
   }
 
   /**
-   * @param {db.Guild} dbGuild
+   *
    */
-  async awaitReactions(dbGuild) {
-    this._dbGuild = dbGuild;
-
+  async awaitReactions() {
     const playTimes = await Database.findAll(db.PlayTime, {
       where: {
-        guildId: dbGuild.id,
+        guildId: this.guild.dbGuild.id,
       },
     });
     const emojis = [];
@@ -81,7 +77,7 @@ class PlayTimesMessage extends DiscordMessage {
 
     Discord.client.on('raw', async (packet) => {
       if (['MESSAGE_REACTION_ADD', 'MESSAGE_REACTION_REMOVE'].includes(packet.t) &&
-      packet.d.guild_id === dbGuild.discordGuildId) {
+      packet.d.guild_id === this.guild.dbGuild.discordGuildId) {
         const message = await this.get();
         const channel = Discord.client.channels.cache.get(packet.d.channel_id);
         const reactionMessage = await channel.messages.fetch(packet.d.message_id);
@@ -109,11 +105,11 @@ class PlayTimesMessage extends DiscordMessage {
    * @param {Object} user
    */
   async saveUserTime(emoji, user) {
-    const userModel = await Discord.databaseUser(user, this._dbGuild);
+    const userModel = await Discord.databaseUser(user, this.guild.dbGuild);
 
     const playTime = await Database.find(db.PlayTime, {
       where: {
-        guildId: this._dbGuild.id,
+        guildId: this.guild.dbGuild.id,
         emoji: emoji,
       },
     });
@@ -130,11 +126,11 @@ class PlayTimesMessage extends DiscordMessage {
    * @param {Object} user
    */
   async deleteUserTime(emoji, user) {
-    const userModel = await Discord.databaseUser(user, this._dbGuild);
+    const userModel = await Discord.databaseUser(user, this.guild.dbGuild);
 
     const playTime = await Database.find(db.PlayTime, {
       where: {
-        guildId: this._dbGuild.id,
+        guildId: this.guild.dbGuild.id,
         emoji: emoji,
       },
     });
@@ -148,4 +144,4 @@ class PlayTimesMessage extends DiscordMessage {
   }
 }
 
-export default new PlayTimesMessage;
+export default PlayTimesMessage;

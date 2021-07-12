@@ -10,9 +10,9 @@ class DiscordMessage {
   /**
    *
    */
-  constructor() {
+  constructor(guild) {
     this._message = null;
-    this._dbGuild = null;
+    this.guild = guild;
   }
 
   /**
@@ -22,7 +22,7 @@ class DiscordMessage {
   async get() {
     const dbMessage = await this.find();
 
-    const settingsChannel = Discord.fetchChannel(this._dbGuild.settingsChannelId);
+    const settingsChannel = Discord.fetchChannel(this.guild.dbGuild.settingsChannelId);
     this._message = await settingsChannel.messages.fetch(dbMessage.messageId);
 
     return this._message;
@@ -34,7 +34,7 @@ class DiscordMessage {
   async find() {
     return Database.find(db.BotMessages, {
       where: {
-        guildId: this._dbGuild.id,
+        guildId: this.guild.dbGuild.id,
         name: this.name,
       },
     });
@@ -57,7 +57,7 @@ class DiscordMessage {
    */
   async saveId(message) {
     await Database.create(db.BotMessages, {
-      guildId: this._dbGuild.id,
+      guildId: this.guild.dbGuild.id,
       messageId: message.id,
       name: this.name,
     });

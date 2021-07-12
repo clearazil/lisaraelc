@@ -90,36 +90,40 @@ class Guild {
    *
    */
   async initMessages() {
+    const playTimesMessage = new PlayTimesMessage(this);
+    const notifyAnyGameMessage = new NotifyAnyGameMessage(this);
+    const gameMessage = new GameMessage(this);
+
     try {
-      await PlayTimesMessage.send(this.dbGuild);
+      await playTimesMessage.send();
     } catch (error) {
       console.error(error);
       console.log('Error sending play times message');
     }
 
     try {
-      await NotifyAnyGameMessage.send(this.dbGuild);
+      await notifyAnyGameMessage.send();
     } catch (error) {
       console.error(error);
       console.log('Error sending notify any games message');
     }
 
     try {
-      PlayTimesMessage.awaitReactions(this.dbGuild);
+      playTimesMessage.awaitReactions();
     } catch (error) {
       console.error(error);
       console.log('Error awaiting reactions for play times message.');
     }
 
     try {
-      GameMessage.awaitReactions(this.dbGuild);
+      gameMessage.awaitReactions();
     } catch (error) {
       console.error(error);
       console.log('Error awaiting reactions for game message.');
     }
 
     try {
-      NotifyAnyGameMessage.awaitReactions(this.dbGuild);
+      notifyAnyGameMessage.awaitReactions();
     } catch (error) {
       console.error(error);
       console.log('Error awaiting reactions for notify any games message');

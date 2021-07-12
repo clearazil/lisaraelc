@@ -31,13 +31,11 @@ class PlayTimesMessage extends DiscordMessage {
   /**
    * Submit the time periods message to the
    * roles channel if it has not been sent yet
-   * @param {db.Guild} dbGuild
+   *
    */
-  async send(dbGuild) {
-    this._dbGuild = dbGuild;
-
+  async send() {
     if (!await this.exists()) {
-      const rolesChannel = Discord.fetchChannel(dbGuild.settingsChannelId);
+      const rolesChannel = Discord.fetchChannel(this.guild.dbGuild.settingsChannelId);
 
       const message = 'Notify me for all games:';
 
@@ -50,10 +48,9 @@ class PlayTimesMessage extends DiscordMessage {
   }
 
   /**
-   * @param {db.Guild} dbGuild
+   *
    */
-  async awaitReactions(dbGuild) {
-    this._dbGuild = dbGuild;
+  async awaitReactions() {
     const message = await this.get();
 
     Discord.client.on('raw', async (packet) => {
@@ -78,7 +75,7 @@ class PlayTimesMessage extends DiscordMessage {
         }
 
         if (notifyAllGames !== null) {
-          const user = await Discord.databaseUser(discordUser, dbGuild, db.UserSetting);
+          const user = await Discord.databaseUser(discordUser, this.guild.dbGuild, db.UserSetting);
 
           if (user.UserSetting !== null) {
             user.UserSetting.notifyAllGames = notifyAllGames;
@@ -95,4 +92,4 @@ class PlayTimesMessage extends DiscordMessage {
   }
 }
 
-export default new PlayTimesMessage;
+export default PlayTimesMessage;
