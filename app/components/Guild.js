@@ -129,6 +129,55 @@ class Guild {
       console.log('Error awaiting reactions for notify any games message');
     }
   }
+
+  /**
+   *
+   * @param {db.Guild} dbGuild
+   */
+  async seedPlayTimes(dbGuild) {
+    const playTimes = [];
+
+    playTimes.push(
+        {
+          guildId: dbGuild.id,
+          name: 'morning',
+          emoji: '1️⃣',
+          timeStart: '08:00:00',
+          timeEnd: '11:59:59',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        {
+          guildId: dbGuild.id,
+          name: 'afternoon',
+          emoji: '2️⃣',
+          timeStart: '12:00:00',
+          timeEnd: '17:59:59',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        {
+          guildId: dbGuild.id,
+          name: 'evening',
+          emoji: '3️⃣',
+          timeStart: '18:00:00',
+          timeEnd: '23:59:59',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        {
+          guildId: dbGuild.id,
+          name: 'night',
+          emoji: '4️⃣',
+          timeStart: '00:00:00',
+          timeEnd: '07:59:59',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+    );
+
+    await db.PlayTime.bulkCreate(playTimes);
+  }
 }
 
 export default Guild;
