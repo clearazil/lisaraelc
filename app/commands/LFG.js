@@ -81,6 +81,15 @@ class LFG {
     for (const user of users) {
       member = members.get(user.discordUserId);
 
+      if (member === undefined) {
+        await db.User.destroy({
+          where: {
+            id: user.id,
+          },
+        });
+        continue;
+      }
+
       const notifyUser = await this.notifyAtThisTime(game.id, user.id, dbGuild.id);
       const hasRole = member.roles.cache.has(game.discordRoleId);
       if (notifyUser && !hasRole) {
