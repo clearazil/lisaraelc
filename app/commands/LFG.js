@@ -25,10 +25,20 @@ class LFG {
 
     commands.set('lfg', {
       method: 'lfg',
-      command: '!lfg',
-      moderatorOnly: false,
-      adminOnly: false,
+      command: 'lfg',
+      permissions: null,
+      arguments: [
+        {
+          name: 'message',
+          description: `Your message.`,
+          required: true,
+          type: 'String',
+        },
+      ],
       needsSetupFinished: true,
+      ephemeral: true,
+      // eslint-disable-next-line max-len
+      description: 'Post a message saying you want to play a specific game.',
     });
 
     return commands;
@@ -103,12 +113,12 @@ class LFG {
   }
 
   /**
-   * @param {Message} message
+   * @param {Interaction} interaction
    * @param {db.Guild} dbGuild
    */
-  async lfg(message, dbGuild) {
+  async lfg(interaction, dbGuild) {
     this._foundRolesInMessage = false;
-    let messageReply = message.content;
+    let messageReply = interaction.options.getString('message');
 
     const gameRoles = await Database.findAll(db.Game, {
       include: {all: true},
@@ -120,9 +130,8 @@ class LFG {
       },
     });
 
-    const guild = message.channel.guild;
-
-    const allMembers = await guild.members.fetch();
+    const guild = interaction.member.guild;
+    const allMembers = await guild.members.cache;
 
     for (const gameRole of gameRoles) {
       this._foundRole = false;
@@ -135,11 +144,10 @@ class LFG {
       }
     }
 
-    if (this._foundRolesInMessage) {
-      await message.delete();
-      await Discord.fetchChannel(dbGuild.playingChannelId)
-          .send(`${message.author.username} : ${messageReply}`);
-    }
+    await Discord.fetchChannel(dbGuild.playingChannelId)
+        .send(`${interaction.user.username} : ${messageReply}`);
+
+    interaction.reply({content: 'Your message was posted.', ephemeral: this.commands.get('lfg').ephemeral});
   }
 
   /**

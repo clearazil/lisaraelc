@@ -70,7 +70,6 @@ class Guild {
     const fields = [
       'discordGuildId',
       'name',
-      'moderatorRoleId',
       'playingChannelId',
       'settingsChannelId',
       'gamesChannelId',
@@ -90,6 +89,7 @@ class Guild {
    *
    */
   async initMessages() {
+    console.log('going to init messages');
     const playTimesMessage = new PlayTimesMessage(this);
     const notifyAnyGameMessage = new NotifyAnyGameMessage(this);
     const gameMessage = new GameMessage(this);
@@ -109,7 +109,7 @@ class Guild {
     }
 
     try {
-      playTimesMessage.awaitReactions();
+      await playTimesMessage.awaitReactions();
     } catch (error) {
       console.error(error);
       console.log('Error awaiting reactions for play times message.');

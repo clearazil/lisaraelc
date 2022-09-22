@@ -1,6 +1,7 @@
 
 import Discord from '../components/Discord';
-import Helper from '../core/Helper';
+const {PermissionFlagsBits} = require('discord.js');
+
 
 /**
  *
@@ -14,67 +15,88 @@ class Setup {
 
     commands.set('setup', {
       method: 'setup',
-      command: '!setup',
-      moderatorOnly: false,
-      adminOnly: true,
+      command: 'setup',
+      permissions: PermissionFlagsBits.Administrator,
       needsSetupFinished: false,
+      ephemeral: true,
       get description() {
-        return `\`\`${this.command}\`\` shows commands to setup the bot.`;
-      },
-    });
-
-    commands.set('moderatorRole', {
-      method: 'moderatorRole',
-      command: '!setModeratorRole',
-      moderatorOnly: false,
-      adminOnly: true,
-      needsSetupFinished: false,
-      get setupDescription() {
-        return `\`\`${this.command}\`\` set the moderator role for moderator only commands (adding/removing games).`;
+        return `Shows commands to setup the bot.`;
       },
     });
 
     commands.set('playingChannel', {
       method: 'playingChannel',
-      command: '!setPlayingChannel',
-      moderatorOnly: false,
-      adminOnly: true,
+      command: 'set-playing-channel',
+      arguments: [
+        {
+          name: 'channel',
+          description: `The channel where 'now playing' messages are displayed.`,
+          required: true,
+          type: 'Channel',
+        },
+      ],
+      permissions: PermissionFlagsBits.Administrator,
       needsSetupFinished: false,
-      get setupDescription() {
-        return `\`\`${this.command}\`\` set the channel for "I want to play x" messages.`;
+      ephemeral: true,
+      get description() {
+        return `Set the channel for "I want to play x" messages.`;
       },
     });
 
     commands.set('settingsChannel', {
       method: 'settingsChannel',
-      command: '!setSettingsChannel',
-      moderatorOnly: false,
-      adminOnly: true,
+      command: 'set-settings-channel',
+      arguments: [
+        {
+          name: 'channel',
+          description: `The channel where users can set their playing times.`,
+          required: true,
+          type: 'Channel',
+        },
+      ],
+      permissions: PermissionFlagsBits.Administrator,
       needsSetupFinished: false,
-      get setupDescription() {
-        return `\`\`${this.command}\`\` set the channel where users can set their playing times.`;
+      ephemeral: true,
+      get description() {
+        return `Set the channel where users can set their playing times.`;
       },
     });
 
     commands.set('gamesChannel', {
       method: 'gamesChannel',
-      command: '!setGamesChannel',
-      moderatorOnly: false,
-      adminOnly: true,
+      command: 'set-games-channel',
+      arguments: [
+        {
+          name: 'channel',
+          description: `The channel where all the games are listed.`,
+          required: true,
+          type: 'Channel',
+        },
+      ],
+      permissions: PermissionFlagsBits.Administrator,
       needsSetupFinished: false,
-      get setupDescription() {
-        return `\`\`${this.command}\`\` set the channels where all the games are listed.`;
+      ephemeral: true,
+      get description() {
+        return `Set the channels where all the games are listed.`;
       },
     });
 
     commands.set('botChannel', {
       method: 'botChannel',
-      command: '!setBotChannel',
-      moderatorOnly: false,
-      adminOnly: true,
+      command: 'set-bot-channel',
+      arguments: [
+        {
+          name: 'channel',
+          description: `The channel for bot commands.`,
+          required: true,
+          type: 'Channel',
+        },
+      ],
+      permissions: PermissionFlagsBits.Administrator,
       needsSetupFinished: false,
-      get setupDescription() {
-        return `\`\`${this.command}\`\` set the channel for bot commands.`;
+      ephemeral: true,
+      get description() {
+        return `Set the channel for bot commands.`;
       },
     });
 
@@ -82,105 +104,80 @@ class Setup {
   }
 
   /**
-   * @param {Message} message
+   * @param {Interaction} interaction
    */
-  setup(message) {
+  setup(interaction) {
     let reply = 'Run the following commands to setup the bot:\n\n';
 
     for (const [, command] of this.commands) {
-      if (command.setupDescription !== undefined) {
-        reply += command.setupDescription + '\n';
-      }
+      reply += command.description + '\n';
     }
 
-    message.channel.send(reply);
+    interaction.reply({content: reply, ephemeral: this.commands.get('setup').ephemeral});
   }
 
   /**
    *
-   * @param {Message} message
+   * @param {Interaction} interaction
    * @param {db.Guild} dbGuild
    */
-  async moderatorRole(message, dbGuild) {
-    this.setChannelOrRole(message, dbGuild, 'moderator', 'role');
+  async playingChannel(interaction, dbGuild) {
+    this.setChannel(interaction, dbGuild, 'playing');
   }
 
   /**
    *
-   * @param {Message} message
+   * @param {Interaction} interaction
    * @param {db.Guild} dbGuild
    */
-  async playingChannel(message, dbGuild) {
-    this.setChannelOrRole(message, dbGuild, 'playing', 'channel');
+  async settingsChannel(interaction, dbGuild) {
+    this.setChannel(interaction, dbGuild, 'settings');
   }
 
   /**
    *
-   * @param {Message} message
+   * @param {Interaction} interaction
    * @param {db.Guild} dbGuild
    */
-  async settingsChannel(message, dbGuild) {
-    this.setChannelOrRole(message, dbGuild, 'settings', 'channel');
+  async gamesChannel(interaction, dbGuild) {
+    this.setChannel(interaction, dbGuild, 'games');
   }
 
   /**
    *
-   * @param {Message} message
+   * @param {Interaction} interaction
    * @param {db.Guild} dbGuild
    */
-  async gamesChannel(message, dbGuild) {
-    this.setChannelOrRole(message, dbGuild, 'games', 'channel');
+  async botChannel(interaction, dbGuild) {
+    this.setChannel(interaction, dbGuild, 'bot');
   }
 
   /**
    *
-   * @param {Message} message
-   * @param {db.Guild} dbGuild
-   */
-  async botChannel(message, dbGuild) {
-    this.setChannelOrRole(message, dbGuild, 'bot', 'channel');
-  }
-
-  /**
-   *
-   * @param {Message} message
+   * @param {Interaction} interaction
    * @param {db.Guild} dbGuild
    * @param {string} name
-   * @param {string} type
    */
-  async setChannelOrRole(message, dbGuild, name, type) {
+  async setChannel(interaction, dbGuild, name) {
     const guild = Discord._guilds.get(dbGuild.discordGuildId);
     const isSetupFinishedBefore = guild.isSetupFinished();
 
-    const id = message.content.replace(this.commands.get(name + Helper.ucfirst(type)).command, '').trim();
+    const channel = interaction.options.getChannel('channel');
 
-    const regExp = new RegExp(/\d{18,}/, 'i');
-    const found = id.match(regExp);
-
-    if (found === null) {
-      message.channel.send(`${message.author} The submitted ${type} isn't valid.`);
-      return;
-    }
-
-    dbGuild[name + Helper.ucfirst(type) + 'Id'] = found[0];
+    dbGuild[`${name}ChannelId`] = channel.id;
     await dbGuild.save();
 
     if (!isSetupFinishedBefore && guild.isSetupFinished()) {
       await guild.initMessages();
     }
 
-    let typePrefix = '';
-
-    if (type === 'role') {
-      typePrefix = '@&';
-    }
-
-    if (type === 'channel') {
-      typePrefix = '#';
-    }
+    console.log(this.commands.get('botChannel'));
 
     // eslint-disable-next-line max-len
-    message.channel.send(`${message.author} The ${name} ${type} has been set as <${typePrefix}${dbGuild[name + Helper.ucfirst(type) + 'Id']}>.`);
+    interaction.reply({
+      content: `The ${name} channel has been set as <#${dbGuild[`${name}ChannelId`]}>.`,
+      ephemeral: this.commands.get(`${name}Channel`).ephemeral,
+    });
   }
 }
 

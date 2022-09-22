@@ -17,12 +17,12 @@ class Settings {
 
     commands.set('settings', {
       method: 'settings',
-      command: '!settings',
-      moderatorOnly: false,
-      adminOnly: false,
+      command: 'settings',
+      permissions: null,
       needsSetupFinished: true,
+      ephemeral: true,
       get description() {
-        return `\`\`${this.command}\`\` shows your personal settings.`;
+        return `Shows your personal settings.`;
       },
     });
 
@@ -30,11 +30,12 @@ class Settings {
   }
 
   /**
-   * @param {Object} message
+   * @param {Interaction} interaction
    * @param {db.Guild} dbGuild
    */
-  async settings(message, dbGuild) {
-    const user = await Discord.databaseUser(message.author, dbGuild, [
+  async settings(interaction, dbGuild) {
+    console.log(interaction);
+    const user = await Discord.databaseUser(interaction.user, dbGuild, [
       {
         model: db.PlayTime,
       },
@@ -131,7 +132,7 @@ class Settings {
 
     messageReply += disinterestedMessage;
 
-    await message.channel.send(messageReply);
+    await interaction.reply({content: messageReply, ephemeral: this.commands.get('settings').ephemeral});
   }
 }
 

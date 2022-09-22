@@ -1,4 +1,4 @@
-FROM node:15
+FROM node:16
 
 # Arguments defined in docker-compose.yml
 ARG user
@@ -12,9 +12,9 @@ RUN useradd -G www-data,root -u $uid -d /home/$user $user
 RUN mkdir -p /home/$user && \
     chown -R $user:$user /home/$user
 
-RUN mkdir /app
-WORKDIR /app
-RUN npm install
+RUN mkdir /application
+WORKDIR /application
+# RUN npm install
 USER $user
 
 EXPOSE 1234

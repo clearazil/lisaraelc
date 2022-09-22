@@ -23,6 +23,7 @@ export default {
     serverId: process.env.DISCORD_SERVER_ID,
     serverName: process.env.DISCORD_SERVER_NAME,
     token: process.env.DISCORD_TOKEN,
+    appId: process.env.DISCORD_APPLICATION_ID,
     channels: {
       gamingLfg: process.env.DISCORD_GAME_CHANNEL,
       bot: process.env.DISCORD_BOT_CHANNEL,

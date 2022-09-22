@@ -1,6 +1,7 @@
 const db = require('../../database/models');
 import Discord from '../components/Discord';
 import Database from '../core/Database';
+const {PermissionFlagsBits} = require('discord.js');
 
 /**
  *
@@ -14,52 +15,98 @@ class Game {
 
     commands.set('add', {
       method: 'add',
-      command: '!addGame',
-      moderatorOnly: true,
-      adminOnly: false,
+      command: 'add-game',
+      permissions: PermissionFlagsBits.ManageChannels,
       needsSetupFinished: true,
+      arguments: [
+        {
+          name: 'game',
+          description: `The game you want to add.`,
+          required: true,
+          type: 'String',
+        },
+      ],
+      ephemeral: false,
       get description() {
-        return `\`\`${this.command} <game name>\`\` add a game.`;
+        return `Add a game.`;
       },
     });
     commands.set('remove', {
       method: 'remove',
-      command: '!removeGame',
-      moderatorOnly: true,
-      adminOnly: false,
+      command: 'remove-game',
+      permissions: PermissionFlagsBits.ManageChannels,
       needsSetupFinished: true,
+      arguments: [
+        {
+          name: 'game',
+          description: `The game you want to remove.`,
+          required: true,
+          type: 'String',
+        },
+      ],
+      ephemeral: true,
       get description() {
-        return `\`\`${this.command} <game name>\`\` remove a game.`;
+        return `Remove a game.`;
       },
     });
     commands.set('addAlias', {
       method: 'addAlias',
-      command: '!addAlias',
-      moderatorOnly: true,
-      adminOnly: false,
+      command: 'add-alias',
+      permissions: PermissionFlagsBits.ManageChannels,
       needsSetupFinished: true,
+      arguments: [
+        {
+          name: 'game',
+          description: `The game you want to add an alias to.`,
+          required: true,
+          type: 'String',
+        },
+        {
+          name: 'alias',
+          description: `The alias you want to add to this game.`,
+          required: true,
+          type: 'String',
+        },
+      ],
+      ephemeral: false,
       get description() {
-        return `\`\`${this.command} \`<game name>\` <alias name>\`\` add an alias to a game.`;
+        return `Add an alias to a game.`;
       },
     });
     commands.set('removeAlias', {
       method: 'removeAlias',
-      command: '!removeAlias',
-      moderatorOnly: true,
-      adminOnly: false,
+      command: 'remove-alias',
+      permissions: PermissionFlagsBits.ManageChannels,
       needsSetupFinished: true,
+      arguments: [
+        {
+          name: 'alias',
+          description: `The alias you want to remove.`,
+          required: true,
+          type: 'String',
+        },
+      ],
+      ephemeral: true,
       get description() {
-        return `\`\`${this.command} <alias name>\`\` remove an alias.`;
+        return `Remove an alias.`;
       },
     });
     commands.set('aliases', {
       method: 'aliases',
-      command: '!aliases',
-      moderatorOnly: false,
-      adminOnly: false,
+      command: 'aliases',
+      permissions: null,
       needsSetupFinished: true,
+      arguments: [
+        {
+          name: 'game',
+          description: `The game you want to see the aliases of.`,
+          required: true,
+          type: 'String',
+        },
+      ],
+      ephemeral: true,
       get description() {
-        return `\`\`${this.command} <game name>\`\` lists the available aliases for a game.`;
+        return `Lists the available aliases for a game.`;
       },
     });
 
@@ -67,18 +114,23 @@ class Game {
   }
 
   /**
-   * @param {Message} message
+   * @param {Interaction} interaction
    * @param {db.Guild} dbGuild
    */
-  async add(message, dbGuild) {
-    const roleName = message.content.replace(this.commands.get('add').command, '').trim();
+  async add(interaction, dbGuild) {
+    const roleName = interaction.options.getString('game');
+    console.log('name of the role', roleName);
 
     if (!(roleName.length > 0)) {
-      message.channel.send(`${message.author} You need submit a game name to add.`);
+      interaction.reply({
+        content: `You need submit a game name to add.`,
+        ephemeral: this.commands.get('add').ephemeral,
+      });
       return;
     }
 
-    const guild = message.channel.guild;
+    const guild = interaction.member.guild;
+    console.log(guild);
 
     const exists = await Database.find(db.Game, {
       where: {
@@ -88,14 +140,17 @@ class Game {
     }) !== null;
 
     if (exists) {
-      message.channel.send(`${message.author} ${roleName} has already been added.`);
-    } else {
-      const role = await guild.roles.create({
-        data: {
-          name: roleName,
-          color: 'BLUE',
-        },
+      interaction.reply({
+        content: `${roleName} has already been added.`,
+        ephemeral: this.commands.get('add').ephemeral,
       });
+    } else {
+      console.log('roles guild', guild.roles);
+      const role = await guild.roles.create({
+        name: roleName,
+        color: '#3498db',
+      },
+      );
 
       const gamesChannel = Discord.fetchChannel(dbGuild.gamesChannelId);
 
@@ -110,23 +165,26 @@ class Game {
         discordMessageId: channelMessage.id,
       });
 
-      message.channel.send(`${message.author} ${roleName} has been added.`);
+      interaction.reply({content: `${roleName} has been added.`, ephemeral: this.commands.get('add').ephemeral});
     }
   }
 
   /**
-   * @param {Message} message
+   * @param {Message} interaction
    * @param {db.Guild} dbGuild
    */
-  async remove(message, dbGuild) {
-    const roleName = message.content.replace(this.commands.get('remove').command, '').trim();
+  async remove(interaction, dbGuild) {
+    const roleName = interaction.options.getString('game');
 
     if (!(roleName.length > 0)) {
-      message.channel.send(`${message.author} You need to submit a game name to remove.`);
+      interaction.reply(
+          {content: `You need to submit a game name to remove.`,
+            ephemeral: this.commands.get('remove').ephmeral,
+          });
       return;
     }
 
-    const guild = message.channel.guild;
+    const guild = interaction.member.guild;
 
     const game = await Database.find(db.Game, {
       where: {
@@ -158,35 +216,30 @@ class Game {
         },
       });
 
-      message.channel.send(`${message.author} ${roleName} has been deleted.`);
+      interaction.reply({content: `${roleName} has been deleted.`, ephemral: this.commands.get('remove').ephmeral});
     } else {
-      message.channel.send(`${message.author} ${roleName} does not exist.`);
+      interaction.reply({content: `${roleName} does not exist.`, ephemeral: this.commands.get('remove').ephmeral});
     }
   }
 
   /**
-   * @param {Message} message
+   * @param {Interaction} interaction
    * @param {db.Guild} dbGuild
    */
-  async addAlias(message, dbGuild) {
-    const params = message.content.replace(this.commands.get('addAlias').command, '').trim();
-
-    const firstArg = new RegExp(/(?<=\`)(.*?)(?=\`)/, 'i');
-    const secondArg = new RegExp(/[A-Za-z0-9\s]+(?![^`]*\`)/, 'i');
-
-    let game = params.match(firstArg);
-    let alias = params.match(secondArg);
+  async addAlias(interaction, dbGuild) {
+    const game = interaction.options.getString('game');
+    const alias = interaction.options.getString('alias');
 
     let dbGame = null;
     let dbAlias = null;
 
     if (game === null || alias === null) {
-      message.channel.send(`${message.author} The arguments submitted were invalid. Please try again.`);
+      interaction.reply({
+        content: `The arguments submitted were invalid. Please try again.`,
+        ephemeral: this.commands.get('addAlias').ephemeral,
+      });
       return;
     }
-
-    game = game[0].trim();
-    alias = alias[0].trim();
 
     dbGame = await Database.find(db.Game, {
       where: {
@@ -196,7 +249,10 @@ class Game {
     });
 
     if (dbGame === null) {
-      message.channel.send(`${message.author} The game ${game} does not exist.`);
+      interaction.reply({
+        content: `The game ${game} does not exist.`,
+        ephemeral: this.commands.get('addAlias').ephemeral,
+      });
       return;
     }
 
@@ -209,7 +265,10 @@ class Game {
     });
 
     if (dbAlias !== null) {
-      message.channel.send(`${message.author} The alias '${alias}' already belongs to ${dbAlias.Game.name}.`);
+      interaction.reply({
+        content: `The alias '${alias}' already belongs to ${dbAlias.Game.name}.`,
+        ephemeral: this.commands.get('addAlias').ephemeral,
+      });
       return;
     }
 
@@ -219,18 +278,24 @@ class Game {
       name: alias,
     });
 
-    message.channel.send(`${message.author} The alias '${alias}' was created for ${game}.`);
+    interaction.reply({
+      content: `The alias '${alias}' was created for ${game}.`,
+      ephemeral: this.commands.get('addAlias').ephemeral,
+    });
   }
 
   /**
-   * @param {Message} message
+   * @param {Interaction} interaction
    * @param {db.Guild} dbGuild
    */
-  async removeAlias(message, dbGuild) {
-    const aliasName = message.content.replace(this.commands.get('removeAlias').command, '').trim();
+  async removeAlias(interaction, dbGuild) {
+    const aliasName = interaction.options.getString('alias');
 
     if (!(aliasName.length > 0)) {
-      message.channel.send(`${message.author} You need to submit an alias name to remove.`);
+      interaction.reply({
+        content: `You need to submit an alias name to remove.`,
+        ephemeral: this.commands.get('removeAlias').ephemeral,
+      });
       return;
     }
 
@@ -243,7 +308,10 @@ class Game {
     });
 
     if (alias === null) {
-      message.channel.send(`${message.author} The alias '${aliasName}' does not exist.`);
+      interaction.reply({
+        content: `The alias '${aliasName}' does not exist.`,
+        ephemeral: this.commands.get('removeAlias').ephemeral,
+      });
       return;
     }
 
@@ -254,18 +322,24 @@ class Game {
       },
     });
 
-    message.channel.send(`${message.author} The alias '${aliasName}' for ${alias.Game.name} was removed.`);
+    interaction.reply({
+      content: `The alias '${aliasName}' for ${alias.Game.name} was removed.`,
+      ephemeral: this.commands.get('removeAlias').ephemeral,
+    });
   }
 
   /**
-   * @param {Message} message
+   * @param {Interaction} interaction
    * @param {db.Guild} dbGuild
    */
-  async aliases(message, dbGuild) {
-    const roleName = message.content.replace(this.commands.get('aliases').command, '').trim();
+  async aliases(interaction, dbGuild) {
+    const roleName = interaction.options.getString('game');
 
     if (!(roleName.length > 0)) {
-      message.channel.send(`${message.author} You need submit a game name to list the aliases for it.`);
+      interaction.reply({
+        content: `You need submit a game name to list the aliases for it.`,
+        ephemeral: this.commands.get('aliases').ephemeral,
+      });
       return;
     }
 
@@ -278,22 +352,28 @@ class Game {
     });
 
     if (game === null) {
-      message.channel.send(`${message.author} The game ${roleName} does not exist.`);
+      interaction.reply({
+        content: `The game ${roleName} does not exist.`,
+        ephemeral: this.commands.get('aliases').ephemeral,
+      });
       return;
     }
 
     if (game.GameAliases.length === 0) {
-      message.channel.send(`${message.author} The game ${roleName} does not have any aliases.`);
+      interaction.reply({
+        content: `The game ${roleName} does not have any aliases.`,
+        ephemeral: this.commands.get('aliases').ephemeral,
+      });
       return;
     }
 
-    let reply = `${message.author} The game ${roleName} has the following aliases:\n\n`;
+    let reply = `The game ${roleName} has the following aliases:\n\n`;
 
     game.GameAliases.forEach((gameAlias) => {
       reply += `> ${ gameAlias.name}\n`;
     });
 
-    message.channel.send(reply);
+    interaction.reply({content: reply, ephemeral: this.commands.get('aliases').ephemeral});
   }
 }
 

@@ -1,6 +1,5 @@
 
 import config from '../../config/config.js';
-import DiscordJs from 'discord.js';
 import Guild from './Guild';
 import '../core/Database';
 import LFG from '../commands/LFG.js';
@@ -12,6 +11,7 @@ import Settings from '../commands/Settings.js';
 import Setup from '../commands/Setup';
 
 const db = require('../../database/models');
+const {Client, GatewayIntentBits, Routes, REST, SlashCommandBuilder, Partials} = require('discord.js');
 
 /**
  *
@@ -21,21 +21,18 @@ class Discord {
    *
    */
   constructor() {
-    this._client = new DiscordJs.Client();
-    this._client.login(config.token);
+    const rest = new REST({version: '10'}).setToken(config.discord.token);
+
+    this._client = new Client({
+      intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.GuildMessageReactions],
+      partials: [Partials.Message, Partials.Channel, Partials.Reaction],
+    });
+    this._client.login(config.discord.token);
 
     this._guilds = new Map();
 
     this._client.once('ready', async () => {
-      for (const discordGuild of this._client.guilds.cache.values()) {
-        const guild = new Guild(discordGuild.id);
-        await guild.initialize();
-        this._guilds.set(discordGuild.id, guild);
-
-        if (guild.isSetupFinished()) {
-          await guild.initMessages();
-        }
-      }
+      const slashCommands = [];
 
       const commandClasses = [LFG, Game, TimeZone, Settings, Setup];
       const listCommands = new ListCommands(commandClasses);
@@ -45,6 +42,25 @@ class Discord {
 
       for (const className of commandClasses) {
         for (const [, commandMap] of className.commands) {
+          console.log(commandMap);
+          const commandBuilder = new SlashCommandBuilder();
+
+          commandBuilder.setName(commandMap.command)
+              .setDescription(commandMap.description)
+              .setDefaultMemberPermissions(commandMap.permissions);
+
+          if (commandMap.arguments !== undefined) {
+            for (const argument of commandMap.arguments) {
+              console.log(`set${argument.type}Option`);
+              commandBuilder[`add${argument.type}Option`]((option) =>
+                option.setName(argument.name)
+                    .setDescription(argument.description)
+                    .setRequired(argument.required));
+            }
+          }
+          slashCommands.push(commandBuilder);
+
+
           commands[commandMap.command] = {
             map: commandMap,
             className: className,
@@ -52,29 +68,57 @@ class Discord {
         }
       }
 
-      this.client.on('message', async (message) => {
-        const guild = this._guilds.get(message.channel.guild.id);
+      for (const discordGuild of this._client.guilds.cache.values()) {
+        try {
+          console.log('Started refreshing application (/) commands.');
+
+          await rest.put(
+              Routes.applicationGuildCommands(config.discord.appId, discordGuild.id), {body: slashCommands},
+          );
+
+          console.log('Successfully reloaded application (/) commands.');
+        } catch (error) {
+          console.error(error);
+        }
+
+        const guild = new Guild(discordGuild.id);
+        await guild.initialize();
+        this._guilds.set(discordGuild.id, guild);
+
+        if (guild.isSetupFinished()) {
+          await guild.initMessages();
+        }
+      }
+
+      this.client.on('interactionCreate', async (interaction) => {
+        if (!interaction.isChatInputCommand()) {
+          return;
+        }
+
+        const guild = this._guilds.get(interaction.guildId);
+
         try {
           const dbGuild = guild.dbGuild;
 
-          if (guild.isSetupFinished() && message.channel.id === dbGuild.playingChannelId) {
-            await LFG.lfg(message, dbGuild);
-          }
+          const command = interaction.commandName;
 
-          const command = message.content.split(' ')[0];
+          console.log(commands);
+          console.log(commands[command]);
 
           if (commands[command] !== undefined) {
+            console.log('not undefined');
             const map = commands[command].map;
             const className = commands[command].className;
             const method = map.method;
 
-            if (await this.runCommand(message, map)) {
-              await className[method](message, dbGuild);
+            if (await this.runCommand(interaction, map)) {
+              console.log('going to reply');
+              await className[method](interaction, dbGuild);
             }
           }
         } catch (error) {
           console.log('Error occured while trying to run a command');
-          message.channel.send(`${message.author} Sorry, an error occured while running this command.`);
+          await interaction.reply(`Sorry, an error occured while running this command.`);
           console.error(error);
         }
       });
@@ -105,45 +149,32 @@ class Discord {
 
   /**
    *
-   * @param {Object} message
+   * @param {Object} interaction
    * @param {Map} commandMap
    * @return {bool}
    */
-  async runCommand(message, commandMap) {
-    const discordGuild = message.channel.guild;
-    const member = discordGuild.member(message.author.id);
-    const guild = this._guilds.get(discordGuild.id);
-    const dbGuild = guild.dbGuild;
+  async runCommand(interaction, commandMap) {
+    const guild = this._guilds.get(interaction.guildId);
+    // const dbGuild = guild.dbGuild;
 
-    if (message.author.bot) {
-      return false;
-    }
-
-    if (!message.content.startsWith(commandMap.command)) {
-      return false;
-    }
-
-    // allow commands anywhere if setup isn't finished
-    if (await guild.isSetupFinished() && message.channel.id !== dbGuild.botChannelId) {
-      return false;
-    }
+    console.log('running command');
 
     if (!await guild.isSetupFinished() && commandMap.needsSetupFinished) {
       // eslint-disable-next-line max-len
-      message.channel.send(`${message.author} Sorry, an admin will have to run !setup before this command can be used.`);
+      interaction.reply(`Sorry, an admin will have to run /setup before this command can be used.`);
       return false;
     }
 
-    if (commandMap.adminOnly && !member.permissions.has('ADMINISTRATOR')) {
-      message.channel.send(`${message.author} Sorry, you do not have access to that command.`);
-      return false;
-    }
+    // if (commandMap.adminOnly && !member.permissions.has('ADMINISTRATOR')) {
+    //   message.channel.send(`${message.author} Sorry, you do not have access to that command.`);
+    //   return false;
+    // }
 
-    if (guild.isSetupFinished() && commandMap.moderatorOnly &&
-      !member.roles.cache.has(dbGuild.moderatorRoleId)) {
-      message.channel.send(`${message.author} Sorry, you do not have access to that command.`);
-      return false;
-    }
+    // if (guild.isSetupFinished() && commandMap.moderatorOnly &&
+    //   !member.roles.cache.has(dbGuild.moderatorRoleId)) {
+    //   message.channel.send(`${message.author} Sorry, you do not have access to that command.`);
+    //   return false;
+    // }
 
     return true;
   }

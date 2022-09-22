@@ -18,12 +18,12 @@ class ListCommands {
 
     commands.set('commandsList', {
       method: 'commandsList',
-      command: '!commands',
-      moderatorOnly: false,
-      adminOnly: false,
+      command: 'commands',
+      permissions: null,
       needsSetupFinished: false,
+      ephemeral: true,
       get description() {
-        return `\`\`${this.command}\`\` lists all available commands.`;
+        return `Lists all available commands.`;
       },
     });
 

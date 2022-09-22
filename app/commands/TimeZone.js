@@ -16,12 +16,20 @@ class TimeZone {
 
     commands.set('timeZone', {
       method: 'timeZone',
-      command: '!timeZone',
-      moderatorOnly: false,
-      adminOnly: false,
+      command: 'time-zone',
+      permissions: null,
+      arguments: [
+        {
+          name: 'time-zone',
+          description: `Your time zone.`,
+          required: true,
+          type: 'String',
+        },
+      ],
       needsSetupFinished: true,
+      ephemeral: true,
       get description() {
-        return `\`\`${this.command} <time zone name>\`\` sets your time zone.`;
+        return `Sets your time zone.`;
       },
     });
 
@@ -29,11 +37,11 @@ class TimeZone {
   }
 
   /**
-   * @param {Message} message
+   * @param {Interaction} interaction
    * @param {db.Guild} dbGuild
    */
-  async timeZone(message, dbGuild) {
-    let timeZoneInput = message.content.replace(this.commands.get('timeZone').command, '').trim();
+  async timeZone(interaction, dbGuild) {
+    let timeZoneInput = interaction.options.getString('time-zone');
     timeZoneInput = timeZoneInput.replace(' ', '_');
 
     let timeZone = null;
@@ -56,12 +64,15 @@ class TimeZone {
     }
 
     if (found === null || (dateTime !== null && !dateTime.isValid)) {
-      // eslint-disable-next-line max-len
-      message.channel.send(`${message.author} Sorry, the time zone ${timeZoneInput} is invalid.\n\nSee this link for a list of valid timezones:\n<https://gist.github.com/diogocapela/12c6617fc87607d11fd62d2a4f42b02a>`);
+      interaction.reply({
+        // eslint-disable-next-line max-len
+        content: `Sorry, the time zone ${timeZoneInput} is invalid.\n\nSee this link for a list of valid timezones:\n<https://gist.github.com/diogocapela/12c6617fc87607d11fd62d2a4f42b02a>`,
+        ephemeral: this.commands.get('timeZone').ephemeral,
+      });
       return;
     }
 
-    const user = await Discord.databaseUser(message.author, dbGuild, db.UserSetting);
+    const user = await Discord.databaseUser(interaction.user, dbGuild, db.UserSetting);
 
     if (user.UserSetting !== null) {
       user.UserSetting.timeZone = timeZone;
@@ -77,8 +88,10 @@ class TimeZone {
       });
     }
 
-    // eslint-disable-next-line max-len
-    message.channel.send(`${message.author} Your time zone has been set! Your local time is: ${dateTime.toLocaleString(DateTime.TIME_24_SIMPLE)}`);
+    interaction.reply({
+      content: `Your time zone has been set! Your local time is: ${dateTime.toLocaleString(DateTime.TIME_24_SIMPLE)}`,
+      ephemeral: this.commands.get('timeZone').ephemeral,
+    });
   }
 }
 
