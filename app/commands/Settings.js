@@ -26,6 +26,17 @@ class Settings {
       },
     });
 
+    commands.set('gameSettings', {
+      method: 'gameSettings',
+      command: 'game-settings',
+      permissions: null,
+      needsSetupFinished: true,
+      ephemeral: true,
+      get description() {
+        return `Shows the games you are (not) interested in.`;
+      },
+    });
+
     return commands;
   }
 
@@ -34,7 +45,6 @@ class Settings {
    * @param {db.Guild} dbGuild
    */
   async settings(interaction, dbGuild) {
-    console.log(interaction);
     const user = await Discord.databaseUser(interaction.user, dbGuild, [
       {
         model: db.PlayTime,
@@ -46,30 +56,6 @@ class Settings {
         model: db.UserGameSetting,
       },
     ]);
-
-    const interestedGames = await Database.findAll(db.UserGameSetting, {
-      include: [
-        {
-          model: db.Game,
-        },
-      ],
-      where: {
-        userId: user.id,
-        notify: true,
-      },
-    });
-
-    const disinterestedGames = await Database.findAll(db.UserGameSetting, {
-      include: [
-        {
-          model: db.Game,
-        },
-      ],
-      where: {
-        userId: user.id,
-        notify: false,
-      },
-    });
 
     let messageReply = '**Time zone:**\n';
     let timeZoneMessage = 'You do not have a time zone set. Using the default time zone (CET).\n';
@@ -108,7 +94,52 @@ class Settings {
     }
 
     messageReply += playTimesMessage;
-    messageReply += '\n**Games you are interested in:**\n';
+
+    await interaction.reply({content: messageReply, ephemeral: this.commands.get('settings').ephemeral});
+  }
+
+  /**
+   * @param {Interaction} interaction
+   * @param {db.Guild} dbGuild
+   */
+  async gameSettings(interaction, dbGuild) {
+    const user = await Discord.databaseUser(interaction.user, dbGuild, [
+      {
+        model: db.PlayTime,
+      },
+      {
+        model: db.UserSetting,
+      },
+      {
+        model: db.UserGameSetting,
+      },
+    ]);
+
+    const interestedGames = await Database.findAll(db.UserGameSetting, {
+      include: [
+        {
+          model: db.Game,
+        },
+      ],
+      where: {
+        userId: user.id,
+        notify: true,
+      },
+    });
+
+    const disinterestedGames = await Database.findAll(db.UserGameSetting, {
+      include: [
+        {
+          model: db.Game,
+        },
+      ],
+      where: {
+        userId: user.id,
+        notify: false,
+      },
+    });
+
+    let messageReply = '**Games you are interested in:**\n';
 
     let interestedMessage = 'No games set.\n';
 
@@ -132,7 +163,7 @@ class Settings {
 
     messageReply += disinterestedMessage;
 
-    await interaction.reply({content: messageReply, ephemeral: this.commands.get('settings').ephemeral});
+    await interaction.reply({content: messageReply, ephemeral: this.commands.get('gameSettings').ephemeral});
   }
 }
 
