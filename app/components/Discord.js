@@ -99,17 +99,12 @@ class Discord {
 
           const command = interaction.commandName;
 
-          console.log(commands);
-          console.log(commands[command]);
-
           if (commands[command] !== undefined) {
-            console.log('not undefined');
             const map = commands[command].map;
             const className = commands[command].className;
             const method = map.method;
 
             if (await this.runCommand(interaction, map)) {
-              console.log('going to reply');
               await className[method](interaction, dbGuild);
             }
           }
@@ -152,26 +147,12 @@ class Discord {
    */
   async runCommand(interaction, commandMap) {
     const guild = this._guilds.get(interaction.guildId);
-    // const dbGuild = guild.dbGuild;
-
-    console.log('running command');
 
     if (!await guild.isSetupFinished() && commandMap.needsSetupFinished) {
       // eslint-disable-next-line max-len
       interaction.reply(`Sorry, an admin will have to run /setup before this command can be used.`);
       return false;
     }
-
-    // if (commandMap.adminOnly && !member.permissions.has('ADMINISTRATOR')) {
-    //   message.channel.send(`${message.author} Sorry, you do not have access to that command.`);
-    //   return false;
-    // }
-
-    // if (guild.isSetupFinished() && commandMap.moderatorOnly &&
-    //   !member.roles.cache.has(dbGuild.moderatorRoleId)) {
-    //   message.channel.send(`${message.author} Sorry, you do not have access to that command.`);
-    //   return false;
-    // }
 
     return true;
   }

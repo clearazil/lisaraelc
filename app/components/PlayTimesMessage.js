@@ -36,7 +36,8 @@ class PlayTimesMessage extends DiscordMessage {
    */
   async send() {
     if (!await this.exists()) {
-      const rolesChannel = Discord.fetchChannel(this.guild.dbGuild.settingsChannelId);
+      const rolesChannel = await Discord.fetchChannel(this.guild.dbGuild.settingsChannelId);
+      console.log('is this ok?');
 
       let message = 'React with the emoji\'s below to set the time periods you want to be notified:\n\n';
 
@@ -50,12 +51,15 @@ class PlayTimesMessage extends DiscordMessage {
         message += `${playTime.emoji} ${Helper.ucfirst(playTime.name)} ${playTime.timeStart} - ${playTime.timeEnd}\n`;
       });
 
+      console.log('failing here I guess');
       const discordMessage = await rolesChannel.send(message);
 
+      console.log('failing next?');
       playTimes.forEach((playTime) => {
         discordMessage.react(playTime.emoji);
       });
 
+      console.log('not ending up here');
       await this.saveId(discordMessage);
     }
   }

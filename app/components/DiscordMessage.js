@@ -8,7 +8,7 @@ const db = require('../../database/models');
  */
 class DiscordMessage {
   /**
-   *
+   * @param {Guild} guild
    */
   constructor(guild) {
     this._message = null;

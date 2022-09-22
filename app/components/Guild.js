@@ -4,6 +4,7 @@ import GameMessage from './GameMessage';
 import NotifyAnyGameMessage from './NotifyAnyGameMessage.js';
 import Database from '../core/Database';
 
+const {PermissionsBitField} = require('discord.js');
 const db = require('../../database/models');
 
 /**
@@ -89,16 +90,46 @@ class Guild {
    *
    */
   async initMessages() {
-    console.log('going to init messages');
     const playTimesMessage = new PlayTimesMessage(this);
     const notifyAnyGameMessage = new NotifyAnyGameMessage(this);
     const gameMessage = new GameMessage(this);
+
+    const guild = Discord.client.guilds.cache.get(this._discordId);
+    const admin = await guild.members.fetch(guild.ownerId);
+
+    const settingsChannel = await Discord.fetchChannel(this.dbGuild.settingsChannelId);
+
+
+    const bot = guild.members.me;
+
+    const permissions = settingsChannel.permissionsFor(bot);
+    if (!permissions.has(PermissionsBitField.Flags.AddReactions)) {
+      await this.sendMessageToAdmin(
+          admin,
+          // eslint-disable-next-line max-len
+          `I'm attempting to post a message in the ${settingsChannel.name} channel, but I do not have permission to add reactions there.`,
+      );
+
+      return;
+    }
+
+    if (!permissions.has(PermissionsBitField.Flags.SendMessages)) {
+      await this.sendMessageToAdmin(
+          admin,
+          // eslint-disable-next-line max-len
+          `I'm attempting to post a message in the ${settingsChannel.name} channel, but I do not have permission to send messages there.`,
+      );
+
+      return;
+    }
 
     try {
       await playTimesMessage.send();
     } catch (error) {
       console.error(error);
       console.log('Error sending play times message');
+
+      return;
     }
 
     try {
@@ -106,6 +137,7 @@ class Guild {
     } catch (error) {
       console.error(error);
       console.log('Error sending notify any games message');
+      return;
     }
 
     try {
@@ -113,6 +145,7 @@ class Guild {
     } catch (error) {
       console.error(error);
       console.log('Error awaiting reactions for play times message.');
+      return;
     }
 
     try {
@@ -120,6 +153,7 @@ class Guild {
     } catch (error) {
       console.error(error);
       console.log('Error awaiting reactions for game message.');
+      return;
     }
 
     try {
@@ -127,6 +161,20 @@ class Guild {
     } catch (error) {
       console.error(error);
       console.log('Error awaiting reactions for notify any games message');
+      return;
+    }
+  }
+
+  /**
+   * @param {GuildMember} admin
+   * @param {string} message
+   */
+  async sendMessageToAdmin(admin, message) {
+    try {
+      await admin.send(message);
+    } catch (error) {
+      console.log(error);
+      console.log(`Could not send message to ${admin.user.username}.`, `Message: ${message}`);
     }
   }
 

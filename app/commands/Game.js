@@ -1,7 +1,7 @@
 const db = require('../../database/models');
 import Discord from '../components/Discord';
 import Database from '../core/Database';
-const {PermissionFlagsBits} = require('discord.js');
+const {PermissionFlagsBits, PermissionsBitField} = require('discord.js');
 
 /**
  *
@@ -119,7 +119,6 @@ class Game {
    */
   async add(interaction, dbGuild) {
     const roleName = interaction.options.getString('game');
-    console.log('name of the role', roleName);
 
     if (!(roleName.length > 0)) {
       interaction.reply({
@@ -130,7 +129,11 @@ class Game {
     }
 
     const guild = interaction.member.guild;
-    console.log(guild);
+    const gamesChannel = Discord.fetchChannel(dbGuild.gamesChannelId);
+
+    if (!this.botHasPermissions(interaction, guild, gamesChannel)) {
+      return;
+    }
 
     const exists = await Database.find(db.Game, {
       where: {
@@ -145,14 +148,11 @@ class Game {
         ephemeral: this.commands.get('add').ephemeral,
       });
     } else {
-      console.log('roles guild', guild.roles);
       const role = await guild.roles.create({
         name: roleName,
         color: '#3498db',
       },
       );
-
-      const gamesChannel = Discord.fetchChannel(dbGuild.gamesChannelId);
 
       const channelMessage = await gamesChannel.send(roleName);
       channelMessage.react(Discord.config.emojis.positive);
@@ -374,6 +374,48 @@ class Game {
     });
 
     interaction.reply({content: reply, ephemeral: this.commands.get('aliases').ephemeral});
+  }
+
+  /**
+   *
+   * @param {Interaction} interaction
+   * @param {Guild} guild
+   * @param {ChannelManager} gamesChannel
+   * @return {boolean}
+   */
+  botHasPermissions(interaction, guild, gamesChannel) {
+    const bot = guild.members.me;
+
+    const permissions = gamesChannel.permissionsFor(bot);
+
+    if (!bot.permissions.has(PermissionsBitField.Flags.ManageRoles)) {
+      interaction.reply({
+        content: `Unable to add game, missing permission to create roles.`,
+        ephemeral: this.commands.get('add').ephemeral,
+      });
+
+      return false;
+    }
+
+    if (!permissions.has(PermissionsBitField.Flags.SendMessages)) {
+      interaction.reply({
+        content: `Unable to add game, missing permission to send messages in the ${gamesChannel.name} channel.`,
+        ephemeral: this.commands.get('add').ephemeral,
+      });
+
+      return false;
+    }
+
+    if (!permissions.has(PermissionsBitField.Flags.AddReactions)) {
+      interaction.reply({
+        content: `Unable to add game, missing permission to add reactions in the ${gamesChannel.name} channel.`,
+        ephemeral: this.commands.get('add').ephemeral,
+      });
+
+      return false;
+    }
+
+    return true;
   }
 }
 
