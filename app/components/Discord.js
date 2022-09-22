@@ -6,7 +6,6 @@ import LFG from '../commands/LFG.js';
 import Game from '../commands/Game.js';
 import Database from '../core/Database';
 import TimeZone from '../commands/TimeZone.js';
-import ListCommands from '../commands/ListCommands.js';
 import Settings from '../commands/Settings.js';
 import Setup from '../commands/Setup';
 
@@ -35,8 +34,6 @@ class Discord {
       const slashCommands = [];
 
       const commandClasses = [LFG, Game, TimeZone, Settings, Setup];
-      const listCommands = new ListCommands(commandClasses);
-      commandClasses.push(listCommands);
 
       const commands = {};
 
