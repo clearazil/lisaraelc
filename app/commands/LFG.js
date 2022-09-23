@@ -93,9 +93,9 @@ class LFG {
 
       game.discordRoleId = role.id;
       game.save();
-
-      return game;
     }
+
+    return game;
   }
 
   /**
