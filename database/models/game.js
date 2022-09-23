@@ -32,6 +32,7 @@ module.exports = (sequelize, DataTypes) => {
     name: DataTypes.STRING,
     discordRoleId: DataTypes.STRING,
     discordMessageId: DataTypes.STRING,
+    lastUsed: DataTypes.DATE,
   }, {
     sequelize,
     modelName: 'Game',

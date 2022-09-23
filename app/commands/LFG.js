@@ -101,6 +101,7 @@ class LFG {
       }
 
       const notifyUser = await this.notifyAtThisTime(game.id, user.id, dbGuild.id);
+
       const hasRole = member.roles.cache.has(game.discordRoleId);
       if (notifyUser && !hasRole) {
         await member.roles.add(game.discordRoleId);
@@ -136,10 +137,23 @@ class LFG {
     for (const gameRole of gameRoles) {
       this._foundRole = false;
 
+      if (gameRole.discordRoleId === null) {
+        const role = await guild.roles.create({
+          name: gameRole.name,
+          color: '#3498db',
+        });
+
+        gameRole.discordRoleId = role.id;
+        gameRole.save();
+      }
+
       messageReply = this.setRoleMentions(messageReply, gameRole);
 
       if (this._foundRole) {
         this._foundRolesInMessage = true;
+
+        gameRole.lastUsed = DateTime.now();
+        gameRole.save();
         await this.addOrRemoveRoles(gameRole, allMembers, dbGuild);
       }
     }

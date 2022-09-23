@@ -1,6 +1,8 @@
 const db = require('../../database/models');
 import Discord from '../components/Discord';
 import Database from '../core/Database';
+import {DateTime} from 'luxon';
+import {Op} from 'sequelize';
 const {PermissionFlagsBits, PermissionsBitField} = require('discord.js');
 
 /**
@@ -107,6 +109,24 @@ class Game {
       ephemeral: true,
       get description() {
         return `Lists the available aliases for a game.`;
+      },
+    });
+    commands.set('purgeRoles', {
+      method: 'purgeRoles',
+      command: 'purge-roles',
+      permissions: PermissionFlagsBits.Administrator,
+      needsSetupFinished: true,
+      arguments: [
+        {
+          name: 'date',
+          description: `Purge the roles that haven't been used after this date (yyyy-mm-dd).`,
+          required: true,
+          type: 'String',
+        },
+      ],
+      ephemeral: true,
+      get description() {
+        return `Removes the game roles on discord's side.`;
       },
     });
 
@@ -374,6 +394,55 @@ class Game {
     });
 
     interaction.reply({content: reply, ephemeral: this.commands.get('aliases').ephemeral});
+  }
+
+  /**
+   * @param {Interaction} interaction
+   * @param {db.Guild} dbGuild
+   */
+  async purgeRoles(interaction, dbGuild) {
+    console.log(interaction);
+    const dateOption = interaction.options.getString('date');
+    const date = DateTime.fromFormat(dateOption, 'yyyy-MM-dd');
+
+    console.log(date);
+    if (date.invalid !== null) {
+      interaction.reply({
+        content: `The submitted date '${dateOption}' is not in the yyyy-mm-dd format.`,
+        ephemeral: this.commands.get('purgeRoles').ephemeral,
+      });
+
+      return;
+    }
+
+    const gameRoles = await Database.findAll(db.Game, {
+      where: {
+        guildId: dbGuild.id,
+        lastUsed: {
+          [Op.or]: {
+            [Op.is]: null,
+            [Op.lt]: date.toFormat('yyyy-MM-dd'),
+          },
+        },
+        discordRoleId: {
+          [Op.not]: null,
+        },
+      },
+    });
+
+    const guild = interaction.member.guild;
+
+    for (const gameRole of gameRoles) {
+      await guild.roles.delete(gameRole.discordRoleId);
+
+      gameRole.discordRoleId = null;
+      await gameRole.save();
+    }
+
+    interaction.reply({
+      content: `The roles not used after ${date.toFormat('dd-MM-yyyy')} have been removed.`,
+      ephemeral: this.commands.get('purgeRoles').ephemeral,
+    });
   }
 
   /**
