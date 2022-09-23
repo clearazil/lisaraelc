@@ -2,6 +2,8 @@
 import Discord from '../components/Discord';
 import Database from '../core/Database';
 import {DateTime} from 'luxon';
+// eslint-disable-next-line no-unused-vars
+import {GuildManager} from 'discord.js';
 const db = require('../../database/models');
 
 /**
@@ -47,13 +49,15 @@ class LFG {
   /**
    * @param {string} message
    * @param {object} game
+   * @param {GuildManager} guild
    * @return {string}
    */
-  setRoleMentions(message, game) {
+  async setRoleMentions(message, game, guild) {
     let regExp = new RegExp(game.name, 'i');
 
     if (message.search(regExp) !== -1) {
       this._foundRole = true;
+      game = await this.recreateRoleIfRemoved(game, guild);
       message = message.replace(regExp, game.mention());
 
       return message;
@@ -65,6 +69,7 @@ class LFG {
 
         if (message.search(regExp) !== -1) {
           this._foundRole = true;
+          game = await this.recreateRoleIfRemoved(game, guild);
           message = message.replace(regExp, game.mention());
           break;
         }
@@ -72,6 +77,25 @@ class LFG {
     }
 
     return message;
+  }
+
+  /**
+   *
+   * @param {dbGame} game
+   * @param {RoleManager} guild
+   */
+  async recreateRoleIfRemoved(game, guild) {
+    if (game.discordRoleId === null) {
+      const role = await guild.roles.create({
+        name: game.name,
+        color: '#3498db',
+      });
+
+      game.discordRoleId = role.id;
+      game.save();
+
+      return game;
+    }
   }
 
   /**
@@ -119,7 +143,7 @@ class LFG {
    */
   async lfg(interaction, dbGuild) {
     this._foundRolesInMessage = false;
-    let messageReply = interaction.options.getString('message');
+    let messageReply = await interaction.options.getString('message');
 
     const gameRoles = await Database.findAll(db.Game, {
       include: {all: true},
@@ -137,17 +161,7 @@ class LFG {
     for (const gameRole of gameRoles) {
       this._foundRole = false;
 
-      if (gameRole.discordRoleId === null) {
-        const role = await guild.roles.create({
-          name: gameRole.name,
-          color: '#3498db',
-        });
-
-        gameRole.discordRoleId = role.id;
-        gameRole.save();
-      }
-
-      messageReply = this.setRoleMentions(messageReply, gameRole);
+      messageReply = await this.setRoleMentions(messageReply, gameRole, guild);
 
       if (this._foundRole) {
         this._foundRolesInMessage = true;
