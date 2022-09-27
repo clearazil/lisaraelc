@@ -175,8 +175,8 @@ class Game {
       );
 
       const channelMessage = await gamesChannel.send(roleName);
-      channelMessage.react(Discord.config.emojis.positive);
-      channelMessage.react(Discord.config.emojis.negative);
+      await channelMessage.react(Discord.config.emojis.positive);
+      await channelMessage.react(Discord.config.emojis.negative);
 
       await Database.create(db.Game, {
         guildId: dbGuild.id,
