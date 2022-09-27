@@ -53,6 +53,10 @@ class PlayTimesMessage extends DiscordMessage {
   async awaitReactions() {
     const message = await this.get();
 
+    if (message === null) {
+      return;
+    }
+
     Discord.client.on('raw', async (packet) => {
       if (['MESSAGE_REACTION_ADD', 'MESSAGE_REACTION_REMOVE'].includes(packet.t)) {
         const discordUser = await Discord.client.users.fetch(packet.d.user_id);

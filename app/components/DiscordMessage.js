@@ -22,8 +22,12 @@ class DiscordMessage {
   async get() {
     const dbMessage = await this.find();
 
-    const settingsChannel = Discord.fetchChannel(this.guild.dbGuild.settingsChannelId);
-    this._message = await settingsChannel.messages.fetch(dbMessage.messageId);
+    try {
+      const settingsChannel = Discord.fetchChannel(this.guild.dbGuild.settingsChannelId);
+      this._message = await settingsChannel.messages.fetch(dbMessage.messageId);
+    } catch (error) {
+      console.error(error);
+    }
 
     return this._message;
   }

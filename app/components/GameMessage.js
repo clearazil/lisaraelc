@@ -24,6 +24,14 @@ class GameMessage {
 
       const gamesChannel = await Discord.fetchChannel(this.guild.dbGuild.gamesChannelId);
 
+      if (gamesChannel === undefined) {
+        // The channel must have been deleted
+        this.guild.dbGuild.gamesChannelId = null;
+        this.guild.dbGuild.save();
+
+        return;
+      }
+
       Discord.client.on('raw', async (packet) => {
         if (['MESSAGE_REACTION_REMOVE', 'MESSAGE_REACTION_ADD'].includes(packet.t) &&
         gamesChannel.id === packet.d.channel_id) {
